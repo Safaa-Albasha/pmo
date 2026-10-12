@@ -51,6 +51,17 @@ test('budget, progress and risk errors', () => {
   assert.strictEqual(c.filter((x) => x === 'NUMBER_RANGE').length, 3);
 });
 
+test('currency is open: ISO codes and custom labels pass, non-text fails', () => {
+  for (const c of ['KWD', 'EGP', 'دينار', 'man-days']) {
+    const d = base();
+    d.project.currency = c;
+    assert.strictEqual(validate(d).ok, true, c);
+  }
+  const d = base();
+  d.project.currency = 42;
+  assert.deepStrictEqual(codes(validate(d)), ['CURRENCY_INVALID']);
+});
+
 test('methodology-required files produce warnings', () => {
   const d = base();
   d.project.methodology = 'hybrid';

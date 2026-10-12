@@ -15,6 +15,7 @@ const MESSAGES = {
   PV_DECREASING: { en: 'budget.json: cumulative plannedValue must not decrease (at {date})', ar: 'budget.json: القيمة المخططة التراكمية لا يجب أن تنقص (عند {date})' },
   NO_PROGRESS: { en: 'No progress snapshot on or before {date} in progress/', ar: 'لا توجد لقطة تقدم في أو قبل {date} داخل progress/' },
   VALIDATION_FAILED: { en: 'Project data has {count} error(s); run validate for details', ar: 'بيانات المشروع فيها {count} خطأ؛ شغّل validate للتفاصيل' },
+  CURRENCY_INVALID: { en: '{file}: "currency" must be a short text (max 20 characters), e.g. an ISO code like SAR, KWD, USD or a label like دينار', ar: '{file}: "currency" يجب أن يكون نصًا قصيرًا (20 حرفًا كحد أقصى)، مثل رمز دولي SAR أو KWD أو USD، أو تسمية مثل دينار' },
   PROJECT_EXISTS: { en: 'A project already exists in {dir}', ar: 'يوجد مشروع مسبقًا في {dir}' },
   ARG_MISSING: { en: 'Missing argument --{arg}', ar: 'المعامل --{arg} مفقود' },
   UNKNOWN_COMMAND: { en: 'Unknown command "{cmd}". Available: {commands}', ar: 'أمر غير معروف "{cmd}". الأوامر المتاحة: {commands}' },

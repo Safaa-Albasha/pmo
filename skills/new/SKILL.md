@@ -12,7 +12,7 @@ Reply in the user's language (Arabic or English).
    - Project name / اسم المشروع
    - Methodology / المنهجية: **waterfall** (predictive / تنبؤي), **agile** (رشيق), **hybrid** (هجين). If unsure, explain in one line each and recommend based on how well scope is known.
    - Report language / لغة التقارير: `ar` or `en`
-   - Currency / العملة (e.g. SAR, AED, USD)
+   - Currency / العملة — open question, the project manager decides. Recommend the 3-letter ISO 4217 code (e.g. SAR, AED, KWD, QAR, BHD, OMR, EGP, JOD, IQD, MAD, USD, EUR, GBP) because the report then shows the local symbol automatically (KWD → د.ك); any other label is also accepted as typed (e.g. «دينار», «Points», «man-days»). Use one currency for the whole project; convert amounts before entering them.
    - Start and end dates (YYYY-MM-DD)
    - Budget at completion (BAC) / الميزانية الإجمالية — number, may be 0 for now
    - Sponsor and project manager names (optional)

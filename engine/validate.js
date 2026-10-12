@@ -29,6 +29,9 @@ function validate(data) {
     if (p[f] === undefined || p[f] === '') err('FIELD_REQUIRED', { file: F, field: f });
   if (p.methodology && !METHODS.includes(p.methodology)) err('ENUM_INVALID', { file: F, field: 'methodology', allowed: METHODS.join(', ') });
   if (p.language && !LANGS.includes(p.language)) err('ENUM_INVALID', { file: F, field: 'language', allowed: LANGS.join(', ') });
+  // Currency is chosen by the project manager: ISO 4217 code (best formatting) or any short label.
+  if (p.currency !== undefined && p.currency !== '' && (typeof p.currency !== 'string' || p.currency.trim().length > 20))
+    err('CURRENCY_INVALID', { file: F });
   for (const f of ['startDate', 'endDate', 'statusDate'])
     if (p[f] !== undefined && p[f] !== '' && !isDate(p[f])) err('DATE_INVALID', { file: F, field: f });
   if (isDate(p.startDate) && isDate(p.endDate) && parseDate(p.startDate) > parseDate(p.endDate))

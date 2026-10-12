@@ -26,7 +26,7 @@ node "${CLAUDE_PLUGIN_ROOT}/engine/cli.js" status --dir .pmo
    - **Schedule:** SPI, SV. Waterfall/hybrid: `schedule.forecastFinish` (forecast from actual progress at the status date) vs `schedule.baselineFinish` → `slipDays` late (negative = early), and vs `schedule.deadline` → `deadlineVarianceDays`; forecast critical path `schedule.criticalPath`. Agile: velocity, sprints remaining, `agile.forecastFinish`.
    - **Cost:** CPI, CV, EAC (`eacPrimary`), VAC, TCPI.
    - **Top 3 risks** with score, level and owner; open-risk EMV total.
-   - **What this means:** 2–3 sentences of plain interpretation (e.g. CPI 0.93 means each 1 SAR spent earns 0.93 SAR of planned work).
+   - **What this means:** 2–3 sentences of plain interpretation (e.g. CPI 0.93 means each 1 unit of the project currency spent earns 0.93 of planned work).
 
    Glossary (keep consistent): Earned Value = القيمة المكتسبة · Planned Value = القيمة المخططة · Actual Cost = التكلفة الفعلية · SPI = مؤشر أداء الجدول · CPI = مؤشر أداء التكلفة · EAC = التقدير عند الإنجاز · VAC = الانحراف عند الإنجاز · TCPI = مؤشر الأداء المطلوب للإنجاز · Critical path = المسار الحرج · Baseline = خط الأساس · Forecast finish = تاريخ الانتهاء المتوقع · Velocity = سرعة الفريق.
 

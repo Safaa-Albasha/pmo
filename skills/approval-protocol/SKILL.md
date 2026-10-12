@@ -52,7 +52,7 @@ Operations:
 |---|---|---|
 | `add` | `file`, `item` (with unique `id`) | new risk, change request, activity, stakeholder, issue, backlog item |
 | `update` | `file`, `id`, `changes` | re-score/close a risk, decide a change request, edit an activity |
-| `set` | `file` (`project.json` or `budget.json`), `path` (dot path), `value` | BAC, reserves, status date, project status |
+| `set` | `file` (`project.json` or `budget.json`), `path` (dot path), `value` | BAC, reserves, project status, currency (relabels only — amounts are not converted; say so in the impact) |
 | `baseline` | optional `date` | set the schedule baseline from the current plan |
 | `document` | `file` (`charter.md`), `source` (`drafts/…`) | publish an approved document |
 

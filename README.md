@@ -109,6 +109,7 @@ Output is JSON; errors carry Arabic and English messages.
 ## Methodology notes
 
 - PMBOK® Guide 8th Edition structure: 6 principles, 7 performance domains (governance, scope, schedule, finance, stakeholders, resources, risk), 5 focus areas (initiating, planning, executing, monitoring & controlling, closing). Skills follow this structure and tailor practices per methodology.
+- Currency is chosen by the project manager: any ISO 4217 code (shown with its local symbol, e.g. KWD → د.ك) or any custom label. One currency per project; changing it later is an approved `set` on `project.json` and does not convert amounts.
 - Schedule uses calendar days; finish dates are inclusive.
 - EAC is reported with three PMI methods (typical BAC/CPI, atypical, CPI×SPI); `eacPrimary` is BAC/CPI.
 - Risk score = probability × impact (1–5 scales); high ≥ 15, medium ≥ 6. EMV uses `probabilityPct` when given, otherwise 10/30/50/70/90%.

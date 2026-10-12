@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.1 — 2026-10-12
+
+- Currency is fully open: any ISO 4217 code or custom label chosen by the project manager; `/pmo:new` asks it as an open question; validation only requires short text. Reports format ISO codes with the local symbol and show custom labels as typed.
+
 ## 1.0.0 — 2026-10-12
 
 First release.
