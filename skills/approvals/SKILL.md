@@ -30,6 +30,8 @@ node "${CLAUDE_PLUGIN_ROOT}/engine/cli.js" approvals --dir .pmo
 node "${CLAUDE_PLUGIN_ROOT}/engine/cli.js" apply --dir .pmo --id <APR-id> --decision <approve|reject> --by "<name>" --note "<note>"
 ```
 
+   Several proposals with the same decision (e.g. "approve all import proposals") → one command: `apply --dir .pmo --ids APR-0003,APR-0004,APR-0005 --decision approve --by "<name>"`; it returns `results` per id (some may fail, e.g. stale — report those).
+
    Claude Code shows a confirmation prompt for every `apply`; this is the PMO guard and is expected — tell the user before the first one.
 
 6. For edit: ask what to change, write a corrected proposal (same shape: `agent`, `title`, `rationale`, `impact`, `operation`) and submit it with `propose --json '<json>'`, then reject the original with note `superseded by <new id>`. Show the new card and ask again.

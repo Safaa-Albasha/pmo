@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 1,
+  "note": "Remote MCP endpoints use OAuth; each user signs in with their own account via /mcp. Endpoints taken from Anthropic's published plugins (Oct 2026) — re-check when a vendor announces a new version.",
+  "connectors": [
+    {
+      "id": "atlassian",
+      "name": "Jira + Confluence (Atlassian)",
+      "setup": "http",
+      "url": "https://mcp.atlassian.com/v1/mcp",
+      "provides": ["backlog", "sprints", "issues", "defects", "publish reports to Confluence"],
+      "fallback": "Jira → Filters → Export CSV, then /pmo:import"
+    },
+    {
+      "id": "asana",
+      "name": "Asana",
+      "setup": "http",
+      "url": "https://mcp.asana.com/v2/mcp",
+      "provides": ["tasks", "progress", "owners"],
+      "fallback": "Project → Export → CSV"
+    },
+    {
+      "id": "linear",
+      "name": "Linear",
+      "setup": "http",
+      "url": "https://mcp.linear.app/mcp",
+      "provides": ["backlog", "cycles", "estimates", "defects"],
+      "fallback": "Export issues to CSV"
+    },
+    {
+      "id": "monday",
+      "name": "monday.com",
+      "setup": "http",
+      "url": "https://mcp.monday.com/mcp",
+      "provides": ["tasks", "status", "timeline"],
+      "fallback": "Board → Export to Excel"
+    },
+    {
+      "id": "clickup",
+      "name": "ClickUp",
+      "setup": "http",
+      "url": "https://mcp.clickup.com/mcp",
+      "provides": ["tasks", "status", "estimates"],
+      "fallback": "List → Export → CSV"
+    },
+    {
+      "id": "slack",
+      "name": "Slack",
+      "setup": "claude-ai-connector",
+      "provides": ["send status summaries (with approval)"],
+      "notes": "Slack's MCP server requires a registered OAuth app. Connect Slack in claude.ai → Settings → Connectors; Claude Code uses claude.ai connectors when you are signed in with the same account."
+    },
+    {
+      "id": "microsoft-365",
+      "name": "Microsoft 365 (Outlook, Teams, SharePoint/OneDrive, Excel)",
+      "setup": "claude-ai-connector",
+      "provides": ["read Excel trackers", "send email/Teams summaries (with approval)"],
+      "notes": "Use the Microsoft 365 connector in claude.ai if your plan and tenant allow it. Microsoft Project and Planner: export to Excel/CSV and use /pmo:import."
+    },
+    {
+      "id": "google-drive",
+      "name": "Google Drive / Sheets",
+      "setup": "claude-ai-connector",
+      "provides": ["read trackers and budgets"],
+      "notes": "Connect Google Drive in claude.ai → Settings → Connectors, or download the sheet as .xlsx/.csv and use /pmo:import."
+    },
+    {
+      "id": "gmail",
+      "name": "Gmail",
+      "setup": "claude-ai-connector",
+      "provides": ["draft/send status emails (with approval)"],
+      "notes": "Connect Gmail in claude.ai → Settings → Connectors."
+    },
+    {
+      "id": "msproject",
+      "name": "Microsoft Project / Planner",
+      "setup": "file",
+      "provides": ["schedule", "% complete"],
+      "notes": "File → Save As/Export → Excel or CSV (ID, Name, Duration, Predecessors, % Complete, Start, Finish), then /pmo:import --type schedule or --type progress."
+    }
+  ]
+}

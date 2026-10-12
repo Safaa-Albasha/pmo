@@ -14,6 +14,12 @@ plugin لـ Claude Code متوافقة مع دليل PMBOK الإصدار الث
 - `/pmo:change` — change requests / طلبات التغيير
 - `/pmo:sprint` — sprint planning & review / السبرنت
 - `/pmo:close` — phase or project closure / الإغلاق
+- `/pmo:setup` — health check & connect tools / الإعداد وربط الأدوات
+- `/pmo:import` — CSV/Excel/JSON import / الاستيراد من Excel
+- `/pmo:sync` — pull from Jira, Linear, Asana… / المزامنة
+
+## Connectors / أدوات الربط (optional)
+Jira + Confluence, Asana, Linear, monday.com, ClickUp (remote MCP, OAuth) · Slack, Microsoft 365, Google Drive, Gmail (claude.ai connectors) · MS Project / Planner (Excel/CSV import).
 
 ## Agents / الوكلاء
 pmo-lead · initiation · planner · controller · risk-manager · quality-manager · change-control · agile-coach · reporter · integrator · closer

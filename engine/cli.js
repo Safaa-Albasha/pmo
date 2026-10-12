@@ -13,6 +13,7 @@ const { cpm, withProgress } = require('./schedule');
 const { status } = require('./status');
 const { createProject } = require('./init');
 const { writeReport } = require('./report');
+const { importFile } = require('./import');
 
 function parseArgs(argv) {
   const [cmd, ...rest] = argv;
@@ -74,6 +75,20 @@ const COMMANDS = {
   propose: (dir, o) => approvals.propose(dir, readProposal(o)),
   approvals: (dir, o) => approvals.list(dir, typeof o.status === 'string' ? o.status : 'pending'),
   apply: (dir, o) => {
+    const opts = { by: typeof o.by === 'string' ? o.by : null, note: typeof o.note === 'string' ? o.note : null };
+    if (typeof o.ids === 'string') {
+      // Batch: one confirmation for several decisions; each id succeeds or fails on its own.
+      const results = o.ids.split(',').map((s) => s.trim()).filter(Boolean).map((id) => {
+        try {
+          return { id, ok: true, decision: approvals.apply(dir, id, o.decision, opts).decision };
+        } catch (e) {
+          if (!(e instanceof PmoError)) throw e;
+          const m = format(e.code, e.params);
+          return { id, ok: false, error: { code: e.code, message_en: m.en, message_ar: m.ar } };
+        }
+      });
+      return { results };
+    }
     if (typeof o.id !== 'string') throw new PmoError('ARG_MISSING', { arg: 'id' });
     return approvals.apply(dir, o.id, o.decision, { by: typeof o.by === 'string' ? o.by : null, note: typeof o.note === 'string' ? o.note : null });
   },
@@ -84,6 +99,58 @@ const COMMANDS = {
       narrativeFile: typeof o.narrative === 'string' ? o.narrative : null,
       out: typeof o.out === 'string' ? path.resolve(o.out) : undefined,
     }),
+  import: (dir, o) => {
+    let map = null;
+    if (typeof o.map === 'string') {
+      try {
+        map = JSON.parse(o.map);
+      } catch (e) {
+        throw new PmoError('JSON_INVALID', { file: '--map', detail: e.message });
+      }
+    }
+    return importFile(dir, {
+      from: typeof o.from === 'string' ? path.resolve(o.from) : null,
+      type: o.type,
+      map,
+      sheet: typeof o.sheet === 'string' ? o.sheet : undefined,
+      write: o.write === true,
+      date: typeof o.date === 'string' ? o.date : undefined,
+      dateFormat: o['date-format'] === 'mdy' ? 'mdy' : 'dmy',
+    });
+  },
+  doctor: (dir) => {
+    const root = path.dirname(dir);
+    const exists = fs.existsSync(path.join(dir, 'project.json'));
+    const project = { dir, exists, valid: null, errors: 0, pendingApprovals: 0 };
+    if (exists) {
+      try {
+        const v = validate(loadProject(dir));
+        project.valid = v.ok;
+        project.errors = v.errors.length;
+        project.pendingApprovals = approvals.list(dir).length;
+      } catch {
+        project.valid = false;
+      }
+    }
+    let servers = {};
+    try {
+      servers = JSON.parse(fs.readFileSync(path.join(root, '.mcp.json'), 'utf8')).mcpServers || {};
+    } catch {
+      servers = {};
+    }
+    const catalog = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'connectors', 'catalog.json'), 'utf8')).connectors;
+    return {
+      node: { version: process.version, ok: Number(process.versions.node.split('.')[0]) >= 18 },
+      project,
+      connectors: catalog.map((c) => ({
+        id: c.id,
+        name: c.name,
+        setup: c.setup,
+        url: c.url || null,
+        configured: c.id in servers || Object.values(servers).some((s) => c.url && s && s.url === c.url),
+      })),
+    };
+  },
   decisions: (dir) => {
     const doc = readJson(dir, 'decisions.json', { optional: true });
     return doc ? doc.decisions : [];

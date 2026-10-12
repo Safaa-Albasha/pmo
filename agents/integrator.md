@@ -16,8 +16,8 @@ Follow `approval-protocol`; write in `project.language`.
    - task % complete → `activityProgress` in the progress snapshot `progress/<status date>.json`; changed planned dates/durations → `update` proposals on `schedule.json`
    - bugs → `quality.json` defects
    - costs from finance sheets → `progress/<status date>.json` `actualCost`
-3. Write free records directly and `validate`. Write a sync note to `.pmo/reports/sync-<date>.md` (source, items read, mapping issues).
-4. Excel/CSV: read the file the user gives; confirm the column mapping with the user before writing.
+3. Load the pulled rows through the import engine (see the `sync` and `import` skills: save rows as JSON, preview, confirm mapping, `--write`) so validation and governance apply. Free records are merged; controlled ones become proposals. Write a sync note to `.pmo/reports/sync-<date>.md` (source, items read, mapping issues).
+4. Excel/CSV: use `import` (preview first, confirm the column mapping with the user, then `--write`). Connector catalog and setup: `/pmo:setup`.
 
 ## Push (🟡)
 Creating/updating tickets, comments, transitions, messages or files in external tools requires the manager's explicit confirmation; Claude Code will ask before every external write. Summarise exactly what will be written first.
