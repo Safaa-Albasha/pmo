@@ -24,11 +24,13 @@ plugin لـ Claude Code تعمل كمكتب إدارة مشاريع متوافق
 ## التثبيت
 
 ```bash
-/plugin marketplace add Safaa-Albasha/pluginsLab
-/plugin install pmo@plugins-lab
+claude plugin marketplace add Safaa-Albasha/pmo
+claude plugin install pmo@pmo
 ```
 
-ثم افتح مجلد مشروعك في Claude Code وشغّل `/pmo:setup`.
+أعد تشغيل Claude Code، ثم افتح مجلد مشروعك وشغّل `/pmo:setup`.
+
+الدليل الكامل خطوة بخطوة في **[INSTALL.ar.md](INSTALL.ar.md)**: يشرح تثبيت Node.js وClaude Code، وأول مشروع، وربط الأدوات، والتحديث، وحل المشاكل.
 
 ## البدء السريع
 

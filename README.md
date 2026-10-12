@@ -15,11 +15,11 @@ A Claude Code plugin that works as a project management office aligned with the 
 ## Install
 
 ```bash
-/plugin marketplace add Safaa-Albasha/pluginsLab
-/plugin install pmo@plugins-lab
+claude plugin marketplace add Safaa-Albasha/pmo
+claude plugin install pmo@pmo
 ```
 
-Then open your project folder in Claude Code and run `/pmo:setup`.
+Restart Claude Code, open your project folder and run `/pmo:setup`. Step-by-step guide (Node.js, Claude Code, first project, connectors, update, troubleshooting): **[INSTALL.md](INSTALL.md)**.
 
 ## Quick start
 
