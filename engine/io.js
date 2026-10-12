@@ -52,4 +52,17 @@ function loadProject(dir) {
   };
 }
 
-module.exports = { PmoError, readJson, writeJson, listProgress, loadProject };
+// Registers that only the report needs.
+function loadExtras(dir) {
+  const o = (f) => readJson(dir, f, { optional: true });
+  return {
+    quality: o('quality.json'),
+    changes: o('changes.json'),
+    issues: o('issues.json'),
+    stakeholders: o('stakeholders.json'),
+    decisions: o('decisions.json'),
+    approvals: o('approvals.json'),
+  };
+}
+
+module.exports = { PmoError, readJson, writeJson, listProgress, loadProject, loadExtras };

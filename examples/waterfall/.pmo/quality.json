@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "metrics": [
+    { "id": "Q1", "name": "ملاحظات الاستلام المفتوحة / Open punch-list items", "unit": "items", "target": 20, "direction": "max", "frequency": "monthly", "owner": "QA lead", "values": [ { "date": "2026-02-28", "value": 34 }, { "date": "2026-03-31", "value": 18 } ] },
+    { "id": "Q2", "name": "نسبة اجتياز التفتيش من أول مرة / First-pass inspection yield", "unit": "%", "target": 90, "direction": "min", "frequency": "monthly", "owner": "QA lead", "values": [ { "date": "2026-02-28", "value": 82 }, { "date": "2026-03-31", "value": 86 } ] }
+  ],
+  "defects": [
+    { "id": "D-001", "title": "Anchor bolt spacing out of tolerance", "severity": "major", "status": "open", "found": "2026-03-20", "deliverable": "Racking" },
+    { "id": "D-002", "title": "Fire door label missing", "severity": "minor", "status": "open", "found": "2026-03-25", "deliverable": "Civil works" },
+    { "id": "D-003", "title": "Lighting design lux below spec", "severity": "major", "status": "closed", "found": "2026-02-10", "fixed": "2026-02-24", "deliverable": "Design" }
+  ],
+  "audits": []
+}

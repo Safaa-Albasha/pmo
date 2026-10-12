@@ -4,6 +4,13 @@ const { compute } = require('./evm');
 
 const sum = (arr, f) => arr.reduce((a, x) => a + (Number(f(x)) || 0), 0);
 
+// What-if: sprints and finish date at a given velocity (embedded in the HTML report).
+function whatIfVelocity({ remainingPoints, lastEnd, sprintLengthDays }, velocity) {
+  if (!(velocity > 0)) return { sprintsRemaining: null, forecastFinish: null };
+  const n = Math.ceil(remainingPoints / velocity);
+  return { sprintsRemaining: n, forecastFinish: lastEnd && sprintLengthDays ? addDays(lastEnd, n * sprintLengthDays) : null };
+}
+
 function analyze(backlog, { bac = null, ac = null } = {}) {
   const sprints = backlog.sprints || [];
   const items = backlog.items || [];
@@ -55,4 +62,4 @@ function analyze(backlog, { bac = null, ac = null } = {}) {
   };
 }
 
-module.exports = { analyze };
+module.exports = { analyze, whatIfVelocity };

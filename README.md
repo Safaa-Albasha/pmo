@@ -7,6 +7,7 @@ plugin لـ Claude Code متوافقة مع دليل PMBOK الإصدار الث
 ## Commands / الأوامر
 - `/pmo:new` — create a project / إنشاء مشروع
 - `/pmo:status` — project health / صحة المشروع
+- `/pmo:report` — interactive report & presentation / التقرير التفاعلي والعرض
 - `/pmo:weekly` — full weekly PMO cycle / الدورة الأسبوعية الكاملة
 - `/pmo:approvals` — decide pending proposals / الموافقات المعلّقة
 - `/pmo:risks` — risk register / سجل المخاطر

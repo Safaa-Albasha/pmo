@@ -12,6 +12,7 @@ const approvals = require('./approvals');
 const { cpm, withProgress } = require('./schedule');
 const { status } = require('./status');
 const { createProject } = require('./init');
+const { writeReport } = require('./report');
 
 function parseArgs(argv) {
   const [cmd, ...rest] = argv;
@@ -76,6 +77,13 @@ const COMMANDS = {
     if (typeof o.id !== 'string') throw new PmoError('ARG_MISSING', { arg: 'id' });
     return approvals.apply(dir, o.id, o.decision, { by: typeof o.by === 'string' ? o.by : null, note: typeof o.note === 'string' ? o.note : null });
   },
+  report: (dir, o) =>
+    writeReport(dir, {
+      date: typeof o.date === 'string' ? o.date : undefined,
+      lang: typeof o.lang === 'string' ? o.lang : undefined,
+      narrativeFile: typeof o.narrative === 'string' ? o.narrative : null,
+      out: typeof o.out === 'string' ? path.resolve(o.out) : undefined,
+    }),
   decisions: (dir) => {
     const doc = readJson(dir, 'decisions.json', { optional: true });
     return doc ? doc.decisions : [];

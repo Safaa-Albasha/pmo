@@ -20,6 +20,6 @@ Write in `project.language`. Follow the `approval-protocol` skill.
    - agile-coach — agile/hybrid only
 4. Reporter: write `.pmo/reports/<status date>-status.md` (structure in the `reporter` agent).
 5. Brief the manager on one screen (pmo-lead format): health, done this period, remaining (% and points, forecast finish vs baseline/deadline), top risks & issues, **decisions needed** (pending APR ids with a recommendation each), next period focus.
-6. Offer `/pmo:approvals` to decide the pending proposals, and to send the report (🟡, needs confirmation).
+6. Offer `/pmo:report` for the interactive report/presentation, `/pmo:approvals` to decide the pending proposals, and to send the report (🟡, needs confirmation).
 
 Numbers only from the engine. Do not apply proposals.

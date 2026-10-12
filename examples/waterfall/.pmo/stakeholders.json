@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "stakeholders": [
+    { "id": "SH-01", "name": "مدير العمليات / Operations Director", "role": "Sponsor", "power": 5, "interest": 5, "attitude": "supporter", "current": "supportive", "desired": "leading", "language": "ar" },
+    { "id": "SH-02", "name": "المدير المالي / CFO", "role": "Budget owner", "power": 5, "interest": 2, "attitude": "neutral", "current": "neutral", "desired": "supportive", "language": "en" },
+    { "id": "SH-03", "name": "مشرفو المستودع / Warehouse supervisors", "role": "End users", "power": 2, "interest": 5, "attitude": "supporter", "current": "supportive", "desired": "supportive", "language": "ar" },
+    { "id": "SH-04", "name": "الدفاع المدني / Civil Defence", "role": "Regulator", "power": 4, "interest": 3, "attitude": "neutral", "current": "neutral", "desired": "supportive", "language": "ar" },
+    { "id": "SH-05", "name": "سكان الحي / Neighbourhood residents", "role": "Community", "power": 1, "interest": 2, "attitude": "neutral", "current": "unaware", "desired": "neutral", "language": "ar" }
+  ]
+}

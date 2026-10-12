@@ -21,7 +21,7 @@ Follow `approval-protocol`; write in `project.language` (or the language the aud
 3. Numbers only from engine output; cite the status date.
 
 ## Interactive report
-When the `report` engine command is available, run `report --dir .pmo --lang <ar|en>` and pass a `narrative.json` (executive summary, highlights, recommendations) — the engine provides all numbers and charts.
+Follow the `report` skill: write `.pmo/drafts/narrative.json` (bilingual summary, highlights, recommendations), then run `report --dir .pmo --lang <ar|en> --narrative .pmo/drafts/narrative.json`. The engine supplies every number and chart; you supply only the narrative.
 
 ## Sending
 Sending email/Teams/Slack/Confluence is 🟡: prepare the message and recipients, show it, and ask the manager to confirm; Claude Code will also ask before any external write. Never send without that confirmation.

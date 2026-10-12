@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "issues": [
+    { "id": "I-001", "title": "شحنة الرفوف محجوزة في الجمارك / Racking shipment held at customs", "raised": "2026-03-18", "priority": "high", "impactArea": "schedule", "owner": "Procurement lead", "due": "2026-04-07", "status": "open", "relatedRisk": "R1" },
+    { "id": "I-002", "title": "تأخر اعتماد المخططات الكهربائية / Electrical drawings approval pending", "raised": "2026-03-25", "priority": "medium", "impactArea": "schedule", "owner": "Design manager", "due": "2026-04-10", "status": "in-progress" }
+  ]
+}

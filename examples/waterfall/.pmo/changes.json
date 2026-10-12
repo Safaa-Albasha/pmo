@@ -1,0 +1,6 @@
+{
+  "schemaVersion": 1,
+  "changes": [
+    { "id": "CR-001", "title": "إضافة رصيف تحميل ثالث / Add third loading dock", "requestedBy": "Operations Director", "date": "2026-03-10", "type": "scope", "impact": { "scheduleDays": 12, "cost": 45000 }, "status": "submitted" }
+  ]
+}

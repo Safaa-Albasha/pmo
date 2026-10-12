@@ -35,6 +35,12 @@ function compute({ bac, pv, ev, ac }) {
   };
 }
 
+// What-if: EAC if the remaining work is done at cpiFuture (embedded in the HTML report).
+function whatIfCost({ bac, ev, ac }, cpiFuture) {
+  if (!(cpiFuture > 0)) return null;
+  return round(ac + (bac - ev) / cpiFuture);
+}
+
 function pvAt(budget, startDate, date) {
   const curve = [...(budget.plannedValue || [])].sort((a, b) => (a.date < b.date ? -1 : 1));
   const pts = [{ date: startDate, pv: 0 }, ...curve];
@@ -90,4 +96,4 @@ function trend(data) {
   });
 }
 
-module.exports = { compute, pvAt, snapshotAt, effectiveDate, fromProject, trend };
+module.exports = { compute, whatIfCost, pvAt, snapshotAt, effectiveDate, fromProject, trend };
