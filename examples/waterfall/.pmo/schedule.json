@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "activities": [
+    { "id": "A", "name": "المتطلبات / Requirements", "duration": 20, "budget": 40000, "percentComplete": 100, "baselineFinish": "2026-01-20" },
+    { "id": "B", "name": "التصميم / Design", "duration": 30, "predecessors": ["A"], "budget": 80000, "percentComplete": 100, "baselineFinish": "2026-02-19" },
+    { "id": "C", "name": "المشتريات / Procurement", "duration": 40, "predecessors": ["A"], "budget": 120000, "percentComplete": 90, "baselineFinish": "2026-03-01" },
+    { "id": "D", "name": "التنفيذ / Construction", "duration": 60, "predecessors": ["B", "C"], "budget": 200000, "percentComplete": 10, "baselineFinish": "2026-04-30" },
+    { "id": "E", "name": "الاختبار / Testing", "duration": 20, "predecessors": ["D"], "budget": 40000, "percentComplete": 0, "baselineFinish": "2026-05-20" },
+    { "id": "F", "name": "التسليم / Handover", "duration": 10, "predecessors": ["E"], "budget": 20000, "percentComplete": 0, "baselineFinish": "2026-05-30" }
+  ]
+}

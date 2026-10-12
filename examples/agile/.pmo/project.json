@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "name": "تطبيق حجز المواعيد / Appointment Booking App",
+  "methodology": "agile",
+  "language": "en",
+  "currency": "AED",
+  "startDate": "2026-02-01",
+  "endDate": "2026-07-31",
+  "statusDate": "2026-04-26",
+  "thresholds": { "green": 0.95, "amber": 0.85 }
+}

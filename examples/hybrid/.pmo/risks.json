@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "risks": [
+    { "id": "R1", "title": "تكامل نظام CRM القديم / Legacy CRM integration", "category": "technical", "probability": 4, "impact": 4, "status": "open", "owner": "Architect", "responseStrategy": "mitigate", "costImpact": 35000 },
+    { "id": "R2", "title": "اعتماد WhatsApp Business / WhatsApp Business approval", "category": "external", "probability": 3, "impact": 3, "status": "open", "owner": "PO", "responseStrategy": "mitigate", "costImpact": 10000 }
+  ]
+}

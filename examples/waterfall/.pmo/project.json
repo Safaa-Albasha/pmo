@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "name": "تجهيز مستودع التوزيع / Distribution Warehouse Fit-out",
+  "methodology": "waterfall",
+  "language": "ar",
+  "currency": "SAR",
+  "startDate": "2026-01-01",
+  "endDate": "2026-06-30",
+  "statusDate": "2026-03-31",
+  "sponsor": "Operations Director",
+  "projectManager": "PM",
+  "thresholds": { "green": 0.95, "amber": 0.85 }
+}

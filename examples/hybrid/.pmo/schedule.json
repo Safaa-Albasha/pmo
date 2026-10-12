@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "activities": [
+    { "id": "P1", "name": "الاستكشاف / Discovery", "duration": 15, "budget": 30000, "percentComplete": 100 },
+    { "id": "P2", "name": "التصميم / Design", "duration": 20, "predecessors": ["P1"], "budget": 50000, "percentComplete": 100 },
+    { "id": "P3", "name": "البناء (Sprints) / Build (sprints)", "duration": 60, "predecessors": ["P2"], "budget": 180000, "percentComplete": 50, "delivery": "agile" },
+    { "id": "P4", "name": "اختبار القبول / UAT", "duration": 15, "predecessors": ["P3"], "budget": 30000, "percentComplete": 0 },
+    { "id": "P5", "name": "الإطلاق / Go-live", "duration": 5, "predecessors": ["P4"], "budget": 10000, "percentComplete": 0 }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "risks": [
+    { "id": "R1", "title": "تأخر توريد الرفوف / Racking supplier delay", "category": "procurement", "probability": 4, "impact": 4, "status": "open", "owner": "Procurement lead", "responseStrategy": "mitigate", "response": "Second supplier pre-qualified", "costImpact": 60000 },
+    { "id": "R2", "title": "تأخر تصريح الدفاع المدني / Civil defence permit delay", "category": "regulatory", "probability": 3, "impact": 5, "status": "open", "owner": "PM", "responseStrategy": "mitigate", "response": "Early submission", "costImpact": 40000 },
+    { "id": "R3", "title": "ارتفاع أسعار الحديد / Steel price increase", "category": "cost", "probability": 3, "impact": 3, "status": "open", "owner": "Finance", "responseStrategy": "transfer", "response": "Fixed-price contract", "costImpact": 30000 },
+    { "id": "R4", "title": "نقص عمالة / Labour shortage", "category": "resources", "probability": 2, "impact": 3, "status": "open", "owner": "Contractor", "responseStrategy": "accept", "costImpact": 15000 },
+    { "id": "R5", "title": "تغيير متطلبات / Requirement change", "category": "scope", "probability": 2, "impact": 2, "status": "closed", "owner": "Sponsor", "responseStrategy": "avoid" }
+  ]
+}

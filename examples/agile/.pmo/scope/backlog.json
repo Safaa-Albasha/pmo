@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "releasePlan": { "totalPoints": 240, "plannedSprints": 12, "sprintLengthDays": 14 },
+  "sprints": [
+    { "id": "S1", "start": "2026-02-01", "end": "2026-02-14", "state": "closed", "plannedPoints": 20, "completedPoints": 18 },
+    { "id": "S2", "start": "2026-02-15", "end": "2026-02-28", "state": "closed", "plannedPoints": 22, "completedPoints": 20 },
+    { "id": "S3", "start": "2026-03-01", "end": "2026-03-14", "state": "closed", "plannedPoints": 22, "completedPoints": 22 },
+    { "id": "S4", "start": "2026-03-15", "end": "2026-03-28", "state": "closed", "plannedPoints": 24, "completedPoints": 21 },
+    { "id": "S5", "start": "2026-03-29", "end": "2026-04-11", "state": "closed", "plannedPoints": 22, "completedPoints": 24 },
+    { "id": "S6", "start": "2026-04-12", "end": "2026-04-25", "state": "closed", "plannedPoints": 24, "completedPoints": 23 },
+    { "id": "S7", "start": "2026-04-26", "end": "2026-05-09", "state": "active", "plannedPoints": 24 }
+  ],
+  "items": [
+    { "id": "US-01", "title": "Sign up / login", "points": 13, "status": "done", "sprint": "S1" },
+    { "id": "US-02", "title": "Profile", "points": 8, "status": "done", "sprint": "S1" },
+    { "id": "US-03", "title": "Clinic search", "points": 21, "status": "done", "sprint": "S2" },
+    { "id": "US-04", "title": "Doctor schedule view", "points": 13, "status": "done", "sprint": "S3" },
+    { "id": "US-05", "title": "Arabic/English UI", "points": 8, "status": "done", "sprint": "S3" },
+    { "id": "US-06", "title": "Book appointment", "points": 21, "status": "done", "sprint": "S4" },
+    { "id": "US-07", "title": "Cancel / reschedule", "points": 13, "status": "done", "sprint": "S5" },
+    { "id": "US-08", "title": "Reminders (SMS)", "points": 5, "status": "done", "sprint": "S5" },
+    { "id": "US-09", "title": "Admin dashboard", "points": 13, "status": "done", "sprint": "S6" },
+    { "id": "US-10", "title": "Audit log", "points": 13, "status": "done", "sprint": "S6" },
+    { "id": "US-11", "title": "Online payment", "points": 21, "status": "doing", "sprint": "S7" },
+    { "id": "US-12", "title": "Insurance check", "points": 13, "status": "todo" },
+    { "id": "US-13", "title": "Ratings", "points": 8, "status": "todo" },
+    { "id": "US-14", "title": "Video consult", "points": 21, "status": "todo" },
+    { "id": "US-15", "title": "Family accounts", "points": 13, "status": "todo" },
+    { "id": "US-16", "title": "Push notifications", "points": 5, "status": "todo" },
+    { "id": "US-17", "title": "Reports export", "points": 8, "status": "todo" },
+    { "id": "US-18", "title": "Performance hardening", "points": 13, "status": "todo" },
+    { "id": "US-19", "title": "Accessibility pass", "points": 10, "status": "todo" }
+  ]
+}

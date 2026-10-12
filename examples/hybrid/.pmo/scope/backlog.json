@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "releasePlan": { "totalPoints": 120, "plannedSprints": 4, "sprintLengthDays": 14 },
+  "sprints": [
+    { "id": "S1", "start": "2026-04-05", "end": "2026-04-18", "state": "closed", "plannedPoints": 30, "completedPoints": 30 },
+    { "id": "S2", "start": "2026-04-19", "end": "2026-05-02", "state": "closed", "plannedPoints": 30, "completedPoints": 30 },
+    { "id": "S3", "start": "2026-05-03", "end": "2026-05-16", "state": "active", "plannedPoints": 30 }
+  ],
+  "items": [
+    { "id": "F-1", "title": "Ticket intake", "points": 20, "status": "done" },
+    { "id": "F-2", "title": "Agent workspace", "points": 15, "status": "done" },
+    { "id": "F-3", "title": "SLA engine", "points": 25, "status": "done" },
+    { "id": "F-4", "title": "Knowledge base", "points": 20, "status": "doing" },
+    { "id": "F-5", "title": "WhatsApp channel", "points": 25, "status": "todo" },
+    { "id": "F-6", "title": "Reporting", "points": 15, "status": "todo" }
+  ]
+}

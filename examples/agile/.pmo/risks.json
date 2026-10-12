@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "risks": [
+    { "id": "R1", "title": "Payment gateway approval delay", "category": "external", "probability": 3, "impact": 4, "status": "open", "owner": "PO", "responseStrategy": "mitigate", "costImpact": 25000 },
+    { "id": "R2", "title": "Health data privacy compliance", "category": "regulatory", "probability": 2, "impact": 5, "status": "open", "owner": "Tech lead", "responseStrategy": "mitigate", "costImpact": 40000 },
+    { "id": "R3", "title": "Velocity drop during Ramadan", "category": "resources", "probability": 4, "impact": 2, "status": "open", "owner": "Scrum master", "responseStrategy": "accept" }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "name": "منصة خدمة العملاء / Customer Service Platform",
+  "methodology": "hybrid",
+  "language": "ar",
+  "currency": "SAR",
+  "startDate": "2026-03-01",
+  "endDate": "2026-07-31",
+  "statusDate": "2026-05-31",
+  "thresholds": { "green": 0.95, "amber": 0.85 }
+}
