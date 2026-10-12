@@ -1,0 +1,12 @@
+{
+  "name": "pmo",
+  "owner": { "name": "Safaa Albasha" },
+  "metadata": { "description": "AI PMO for Claude Code — used when this folder becomes its own repository" },
+  "plugins": [
+    {
+      "name": "pmo",
+      "source": "./",
+      "description": "AI PMO aligned with PMBOK 8 — Arabic/English, waterfall/agile/hybrid, EVM, risk, approvals, interactive reports"
+    }
+  ]
+}

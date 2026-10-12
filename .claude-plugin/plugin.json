@@ -1,7 +1,20 @@
 {
   "name": "pmo",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "AI PMO aligned with PMI PMBOK Guide 8th Edition. Arabic/English. Waterfall, agile and hybrid. EVM, schedule, risk, approvals, interactive reports.",
-  "author": { "name": "Safaa Albasha" },
-  "keywords": ["project-management", "pmi", "pmbok", "evm", "risk", "agile", "arabic"]
+  "author": {
+    "name": "Safaa Albasha"
+  },
+  "keywords": [
+    "project-management",
+    "pmi",
+    "pmbok",
+    "evm",
+    "risk",
+    "agile",
+    "arabic"
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/Safaa-Albasha/pluginsLab/tree/main/plugins/pmo",
+  "repository": "https://github.com/Safaa-Albasha/pluginsLab"
 }

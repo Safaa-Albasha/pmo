@@ -1,32 +1,127 @@
-# pmo — AI Project Management Office / مكتب إدارة مشاريع ذكي
+# pmo — AI Project Management Office for Claude Code
 
-Claude Code plugin aligned with the PMI PMBOK® Guide 8th Edition. Arabic & English. Waterfall, agile, hybrid.
+[العربية](README.ar.md)
 
-plugin لـ Claude Code متوافقة مع دليل PMBOK الإصدار الثامن. عربي وإنجليزي. تنبؤي ورشيق وهجين.
+A Claude Code plugin that works as a project management office aligned with the **PMI PMBOK® Guide, 8th Edition**. It supports **waterfall, agile and hybrid** projects, writes in **Arabic or English**, and keeps the project manager in control: agents analyse and draft, but every change to a controlled record waits for your approval.
 
-## Commands / الأوامر
-- `/pmo:new` — create a project / إنشاء مشروع
-- `/pmo:status` — project health / صحة المشروع
-- `/pmo:report` — interactive report & presentation / التقرير التفاعلي والعرض
-- `/pmo:weekly` — full weekly PMO cycle / الدورة الأسبوعية الكاملة
-- `/pmo:approvals` — decide pending proposals / الموافقات المعلّقة
-- `/pmo:risks` — risk register / سجل المخاطر
-- `/pmo:change` — change requests / طلبات التغيير
-- `/pmo:sprint` — sprint planning & review / السبرنت
-- `/pmo:close` — phase or project closure / الإغلاق
-- `/pmo:setup` — health check & connect tools / الإعداد وربط الأدوات
-- `/pmo:import` — CSV/Excel/JSON import / الاستيراد من Excel
-- `/pmo:sync` — pull from Jira, Linear, Asana… / المزامنة
+- **11 specialist agents** — PMO lead, initiation, planner, controller (EVM), risk, quality, change control, agile coach, reporter, integrator, closer.
+- **Deterministic engine** — EVM (SPI, CPI, EAC, ETC, VAC, TCPI), critical path with progress-based forecast, agile velocity and AgileEVM, risk scoring/EMV/heat map. Numbers are calculated, never guessed.
+- **Interactive report** — one offline HTML file that is both a dashboard and a full-screen presentation, Arabic/English, light/dark, with what-if sliders.
+- **Governance** — proposals, an approval queue and a decision log; a hook blocks direct edits to controlled records.
+- **Connectors (optional)** — Jira/Confluence, Asana, Linear, monday.com, ClickUp, Slack, Microsoft 365, Google Drive, Gmail; Excel/CSV import from MS Project, Planner and others.
 
-## Connectors / أدوات الربط (optional)
-Jira + Confluence, Asana, Linear, monday.com, ClickUp (remote MCP, OAuth) · Slack, Microsoft 365, Google Drive, Gmail (claude.ai connectors) · MS Project / Planner (Excel/CSV import).
+> Requires **Node.js 18+** (https://nodejs.org). No other dependencies.
 
-## Agents / الوكلاء
-pmo-lead · initiation · planner · controller · risk-manager · quality-manager · change-control · agile-coach · reporter · integrator · closer
+## Install
 
-## Governance / الحوكمة
-Agents analyse and draft freely, but controlled records (charter, schedule, budget, risks, changes, baseline) change only through proposals that the project manager approves in `/pmo:approvals`. A hook blocks direct edits; every decision is logged in `.pmo/decisions.json`.
+```bash
+/plugin marketplace add Safaa-Albasha/pluginsLab
+/plugin install pmo@plugins-lab
+```
 
-يحلل الوكلاء ويكتبون المسودات بحرية، لكن السجلات المحمية لا تتغير إلا عبر مقترحات يوافق عليها مدير المشروع. يمنع Hook التعديل المباشر، ويُسجَّل كل قرار في `.pmo/decisions.json`.
+Then open your project folder in Claude Code and run `/pmo:setup`.
 
-Requires Node.js 18+ / يتطلب Node.js 18 أو أحدث.
+## Quick start
+
+1. `/pmo:new` — answer a few questions (name, methodology, language, currency, dates, budget). Creates `.pmo/` in your folder.
+2. Add your plan: build it with the planner (“plan the project”), or `/pmo:import` a Jira/MS Project/Excel file.
+3. Each week: `/pmo:weekly` — records progress, runs every specialist, writes the status report and lists the decisions you need to take.
+4. `/pmo:approvals` — approve, reject or edit what the agents proposed.
+5. `/pmo:report` — the interactive report / steering-committee presentation.
+
+Try it first on a sample: copy `examples/waterfall` (Arabic), `examples/agile` (English) or `examples/hybrid` to a folder and run `/pmo:status`. A generated sample report is in `examples/sample-report-waterfall.html`.
+
+## Commands
+
+| Command | What it does |
+|---|---|
+| `/pmo:setup` | Health check, connect tools |
+| `/pmo:new` | Create a project (`.pmo/`) |
+| `/pmo:status` | Health 🟢🟡🔴, SPI/CPI, forecast finish vs baseline, points done/remaining, top risks |
+| `/pmo:weekly` | Full weekly cycle with all agents and a one-screen briefing |
+| `/pmo:approvals` | Decide pending proposals; every decision is logged |
+| `/pmo:report` | Interactive HTML report and presentation |
+| `/pmo:risks` | Risk register, heat map, new/updated risks |
+| `/pmo:change` | Change requests with impact analysis |
+| `/pmo:sprint` | Sprint planning, review and close (agile/hybrid) |
+| `/pmo:close` | Phase or project closure, lessons learned |
+| `/pmo:import` | CSV / Excel / JSON import with Arabic or English headers |
+| `/pmo:sync` | Pull from connected tools |
+
+You can also just ask in plain language (“how is the project doing?”, “add a risk about permits”, “prepare the steering committee pack”).
+
+## How approvals work
+
+| Level | Who decides | Examples |
+|---|---|---|
+| 🟢 Automatic | agents | calculations, analysis, drafts, reports, backlog/issue/progress updates |
+| 🟡 Your approval | you, in `/pmo:approvals` | risks, schedule, budget, baseline, charter, change requests, project closure, any write or message to an external tool |
+| 🔴 Never | — | deleting records, inventing numbers, sending without your confirmation |
+
+Agents submit a proposal (what changes, why, impact). You approve, reject or edit it. Approved changes are applied by the engine, validated against the whole project, and written to `.pmo/decisions.json` with who decided and when. A PreToolUse hook blocks direct edits to controlled files, and Claude Code asks for confirmation before every `apply` — this holds in bypass-permissions mode too (verified: the call is refused when no confirmation can be given).
+
+## Project data (`.pmo/`)
+
+| File | Content | Changes by |
+|---|---|---|
+| `project.json` | name, methodology, language, currency, dates, thresholds | approval |
+| `charter.md` | project charter | approval (from `drafts/`) |
+| `schedule.json` | activities, dependencies, baseline | approval |
+| `budget.json` | BAC, reserves, planned value curve | approval |
+| `risks.json` · `changes.json` · `scope/wbs.json` | registers | approval |
+| `scope/backlog.json` | sprints and backlog items | direct |
+| `progress/<date>.json` | % complete, actual cost, points done, `activityProgress` | direct |
+| `issues.json` · `stakeholders.json` · `quality.json` · `lessons.json` | registers | direct |
+| `approvals.json` · `decisions.json` | approval queue and decision log | engine only |
+| `drafts/` · `reports/` | drafts and generated reports | direct |
+
+The newest progress snapshot sets the status date; its `activityProgress` drives the schedule forecast. All files are plain JSON/Markdown — keep `.pmo/` in Git for a full audit trail.
+
+## Connectors
+
+All optional. Without them everything works from local files and imports.
+
+| Tool | How |
+|---|---|
+| Jira + Confluence, Asana, Linear, monday.com, ClickUp | remote MCP server added to the project's `.mcp.json` by `/pmo:setup`; each user signs in with OAuth via `/mcp` |
+| Slack, Microsoft 365, Google Drive, Gmail | claude.ai connectors (claude.ai → Settings → Connectors) |
+| MS Project, Planner, any spreadsheet | export to Excel/CSV → `/pmo:import` |
+
+Pulling data is automatic; any write or message to an external tool asks for confirmation.
+
+## Engine CLI
+
+Agents call the engine; you can too:
+
+```bash
+node <plugin>/engine/cli.js status   --dir .pmo [--date YYYY-MM-DD]
+node <plugin>/engine/cli.js evm      --dir .pmo
+node <plugin>/engine/cli.js schedule --dir .pmo
+node <plugin>/engine/cli.js agile    --dir .pmo
+node <plugin>/engine/cli.js risk     --dir .pmo
+node <plugin>/engine/cli.js report   --dir .pmo [--lang ar|en] [--narrative file.json] [--out file.html]
+node <plugin>/engine/cli.js import   --dir .pmo --from file.xlsx --type backlog|risks|schedule|issues|stakeholders|progress [--write]
+node <plugin>/engine/cli.js validate | approvals | decisions | doctor --dir .pmo
+```
+
+Output is JSON; errors carry Arabic and English messages.
+
+## Methodology notes
+
+- PMBOK® Guide 8th Edition structure: 6 principles, 7 performance domains (governance, scope, schedule, finance, stakeholders, resources, risk), 5 focus areas (initiating, planning, executing, monitoring & controlling, closing). Skills follow this structure and tailor practices per methodology.
+- Schedule uses calendar days; finish dates are inclusive.
+- EAC is reported with three PMI methods (typical BAC/CPI, atypical, CPI×SPI); `eacPrimary` is BAC/CPI.
+- Risk score = probability × impact (1–5 scales); high ≥ 15, medium ≥ 6. EMV uses `probabilityPct` when given, otherwise 10/30/50/70/90%.
+
+The narrative text in reports is written by the AI; all figures in tables and charts come from the engine. Review narrative text before sending it to stakeholders.
+
+## Development
+
+```bash
+cd plugins/pmo
+node --test        # engine tests
+```
+
+## License
+
+MIT © 2026 Safaa Albasha. PMI and PMBOK are registered marks of the Project Management Institute, Inc. This plugin is not affiliated with or endorsed by PMI.

@@ -1,8 +1,13 @@
 {
   "name": "pmo-plugin",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "description": "Engine and tests for the pmo Claude Code plugin",
-  "engines": { "node": ">=18" },
-  "scripts": { "test": "node --test" }
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "license": "MIT"
 }
