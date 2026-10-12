@@ -44,10 +44,11 @@ test('budget, progress and risk errors', () => {
   const d = base();
   d.budget.plannedValue[1].pv = 50;
   d.progress[0].percentComplete = 140;
+  d.progress[0].activityProgress = { A: 120 };
   d.risks.risks[0].probability = 7;
   const c = codes(validate(d));
   assert.ok(c.includes('PV_DECREASING'));
-  assert.strictEqual(c.filter((x) => x === 'NUMBER_RANGE').length, 2);
+  assert.strictEqual(c.filter((x) => x === 'NUMBER_RANGE').length, 3);
 });
 
 test('methodology-required files produce warnings', () => {

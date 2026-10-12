@@ -74,6 +74,7 @@ function validate(data) {
     range(s.file, 'percentComplete', s.percentComplete, 0, 100);
     range(s.file, 'actualCost', s.actualCost, 0, Number.MAX_SAFE_INTEGER);
     range(s.file, 'pointsCompleted', s.pointsCompleted, 0, Number.MAX_SAFE_INTEGER);
+    for (const [id, v] of Object.entries(s.activityProgress || {})) range(s.file, `activityProgress.${id}`, v, 0, 100);
   }
 
   // risks.json

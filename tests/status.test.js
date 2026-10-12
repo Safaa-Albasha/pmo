@@ -66,3 +66,19 @@ test('missing progress adds note instead of throwing', () => {
   assert.ok(s.notes.includes('EVM_UNAVAILABLE'));
   assert.strictEqual(s.health.overall, null);
 });
+
+test('latest snapshot drives status date and activity progress', () => {
+  const d = ex('waterfall');
+  d.progress.push({
+    date: '2026-04-30',
+    file: 'progress/2026-04-30.json',
+    percentComplete: 55,
+    actualCost: 300000,
+    activityProgress: { C: 100, D: 40 },
+  });
+  const s = status(d);
+  assert.strictEqual(s.date, '2026-04-30');
+  assert.strictEqual(s.evm.ev, 275000);
+  // sd=120; D 40% of 60 → 36 left → ef 156; E 156–176; F 176–186 → day 186 = 2026-07-05
+  assert.strictEqual(s.schedule.forecastFinish, '2026-07-05');
+});

@@ -84,3 +84,11 @@ test('forecast on waterfall example', () => {
   assert.strictEqual(r.projectFinish, '2026-06-23');
   assert.deepStrictEqual(r.criticalPath, ['D', 'E', 'F']);
 });
+
+test('withProgress overrides activity percentComplete from a snapshot', () => {
+  const { withProgress } = require('../engine/schedule');
+  const s = withProgress(net, { activityProgress: { A: 100 } });
+  assert.strictEqual(s.activities.find((a) => a.id === 'A').percentComplete, 100);
+  assert.strictEqual(net.activities[0].percentComplete, undefined);
+  assert.strictEqual(withProgress(net, null), net);
+});

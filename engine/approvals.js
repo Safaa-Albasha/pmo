@@ -1,4 +1,6 @@
 'use strict';
+const fs = require('fs');
+const path = require('path');
 const { PmoError, readJson, writeJson, loadProject } = require('./io');
 const { validate } = require('./validate');
 const { cpm } = require('./schedule');
@@ -15,7 +17,9 @@ const PROTECTED = [
   'decisions.json',
   'approvals.json',
 ];
-const OPS = ['add', 'update', 'set', 'baseline'];
+const OPS = ['add', 'update', 'set', 'baseline', 'document'];
+// Controlled documents published from a draft in .pmo/drafts/.
+const DOCUMENTS = ['charter.md'];
 const COLLECTIONS = {
   'risks.json': 'risks',
   'changes.json': 'changes',
@@ -23,6 +27,7 @@ const COLLECTIONS = {
   'stakeholders.json': 'stakeholders',
   'issues.json': 'issues',
   'scope/backlog.json': 'items',
+  'scope/wbs.json': 'elements',
 };
 const SET_FILES = ['project.json', 'budget.json'];
 const DATA_KEY = { 'project.json': 'project', 'schedule.json': 'schedule', 'budget.json': 'budget', 'risks.json': 'risks', 'scope/backlog.json': 'backlog' };
@@ -65,6 +70,15 @@ function execute(dir, op) {
     return { file: 'schedule.json', doc, before, after: doc.activities.map(pick) };
   }
 
+  if (op.op === 'document') {
+    if (!DOCUMENTS.includes(op.file)) throw new PmoError('FILE_NOT_ALLOWED', { op: op.op, file: op.file });
+    const src = path.join(dir, op.source || '');
+    if (!op.source || !fs.existsSync(src)) throw new PmoError('FILE_MISSING', { file: op.source || 'source' }, op.source);
+    const target = path.join(dir, op.file);
+    const before = fs.existsSync(target) ? fs.readFileSync(target, 'utf8') : null;
+    return { file: op.file, text: fs.readFileSync(src, 'utf8'), before, after: fs.readFileSync(src, 'utf8') };
+  }
+
   if (op.op === 'set') {
     if (!SET_FILES.includes(op.file)) throw new PmoError('FILE_NOT_ALLOWED', { op: op.op, file: op.file });
     if (!op.path) throw new PmoError('ARG_MISSING', { arg: 'operation.path' });
@@ -105,7 +119,7 @@ function propose(dir, p) {
   if (!p || !p.agent) throw new PmoError('ARG_MISSING', { arg: 'agent' });
   if (!p.operation) throw new PmoError('ARG_MISSING', { arg: 'operation' });
   const r = execute(dir, p.operation);
-  checkValid(dir, r.file, r.doc);
+  if (r.doc) checkValid(dir, r.file, r.doc);
   const doc = readJson(dir, 'approvals.json', { optional: true }) || { schemaVersion: 1, approvals: [] };
   const a = {
     id: nextId(doc.approvals, 'APR'),
@@ -143,8 +157,11 @@ function apply(dir, id, decision, { by, note } = {}) {
   if (decision === 'approve') {
     const r = execute(dir, a.operation);
     if (JSON.stringify(r.before) !== JSON.stringify(a.before)) throw new PmoError('PROPOSAL_STALE', { id });
-    checkValid(dir, r.file, r.doc);
-    writeJson(dir, r.file, r.doc);
+    if (r.text !== undefined) fs.writeFileSync(path.join(dir, r.file), r.text, 'utf8');
+    else {
+      checkValid(dir, r.file, r.doc);
+      writeJson(dir, r.file, r.doc);
+    }
   }
 
   a.status = decision === 'approve' ? 'approved' : 'rejected';

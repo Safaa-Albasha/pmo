@@ -54,6 +54,18 @@ function toNodes(acts, sd) {
   });
 }
 
+// Overlay activity % complete recorded in progress snapshots (free records) onto the plan.
+// Accepts one snapshot or a list (applied in order, later wins).
+function withProgress(schedule, snaps) {
+  const list = (Array.isArray(snaps) ? snaps : [snaps]).filter((s) => s && s.activityProgress);
+  if (!list.length) return schedule;
+  const pct = Object.assign({}, ...list.map((s) => s.activityProgress));
+  return {
+    ...schedule,
+    activities: (schedule.activities || []).map((a) => (a.id in pct ? { ...a, percentComplete: pct[a.id] } : a)),
+  };
+}
+
 function cpm(schedule, startDate, { statusDate = null } = {}) {
   const acts = schedule.activities || [];
   const sd = statusDate ? daysBetween(startDate, statusDate) + 1 : null;
@@ -132,4 +144,4 @@ function cpm(schedule, startDate, { statusDate = null } = {}) {
   };
 }
 
-module.exports = { normPreds, topoOrder, findCycle, cpm };
+module.exports = { normPreds, topoOrder, findCycle, withProgress, cpm };

@@ -57,6 +57,15 @@ function snapshotAt(progress, date) {
   return s;
 }
 
+// Status date = the later of project.statusDate and the latest progress snapshot.
+function effectiveDate(project, progress) {
+  const last = progress.length ? progress[progress.length - 1].date : null;
+  const sd = project.statusDate || null;
+  if (!sd) return last;
+  if (!last) return sd;
+  return last > sd ? last : sd;
+}
+
 function earned(bac, snap) {
   return snap.earnedValue ?? (bac * (snap.percentComplete || 0)) / 100;
 }
@@ -64,7 +73,7 @@ function earned(bac, snap) {
 function fromProject(data, date) {
   const { project, budget, progress } = data;
   if (!budget) throw new PmoError('FILE_MISSING', { file: 'budget.json' }, 'budget.json');
-  const at = date || project.statusDate || (progress.length ? progress[progress.length - 1].date : null);
+  const at = date || effectiveDate(project, progress);
   const snap = at ? snapshotAt(progress, at) : null;
   if (!snap) throw new PmoError('NO_PROGRESS', { date: at || '-' }, 'progress/');
   const bac = budget.bac;
@@ -81,4 +90,4 @@ function trend(data) {
   });
 }
 
-module.exports = { compute, pvAt, snapshotAt, fromProject, trend };
+module.exports = { compute, pvAt, snapshotAt, effectiveDate, fromProject, trend };

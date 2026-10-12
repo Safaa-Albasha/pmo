@@ -96,3 +96,17 @@ test('bad operations', () => {
   assert.throws(() => propose(dir, { agent: 'x', operation: { op: 'add', file: 'risks.json', item: { ...newRisk, id: 'R1' } } }), (e) => e.code === 'ID_DUPLICATE');
   assert.throws(() => propose(dir, { operation: { op: 'add', file: 'risks.json', item: newRisk } }), (e) => e.code === 'ARG_MISSING');
 });
+
+test('document operation publishes an approved draft', () => {
+  const dir = copyExample();
+  fs.mkdirSync(path.join(dir, 'drafts'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'drafts', 'charter.md'), '# Charter v1\n');
+  const a = propose(dir, { agent: 'initiation', title: 'Approve charter', operation: { op: 'document', file: 'charter.md', source: 'drafts/charter.md' } });
+  assert.strictEqual(a.before, null);
+  assert.strictEqual(a.after, '# Charter v1\n');
+  assert.ok(!fs.existsSync(path.join(dir, 'charter.md')));
+  apply(dir, a.id, 'approve', { by: 'PM' });
+  assert.strictEqual(fs.readFileSync(path.join(dir, 'charter.md'), 'utf8'), '# Charter v1\n');
+  assert.throws(() => propose(dir, { agent: 'x', operation: { op: 'document', file: 'risks.json', source: 'drafts/charter.md' } }), (e) => e.code === 'FILE_NOT_ALLOWED');
+  assert.throws(() => propose(dir, { agent: 'x', operation: { op: 'document', file: 'charter.md', source: 'drafts/none.md' } }), (e) => e.code === 'FILE_MISSING');
+});

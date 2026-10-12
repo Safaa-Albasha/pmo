@@ -2,7 +2,7 @@
 const evm = require('./evm');
 const agile = require('./agile');
 const risk = require('./risk');
-const { cpm } = require('./schedule');
+const { cpm, withProgress } = require('./schedule');
 const { daysBetween } = require('./util');
 
 const DEFAULT_TH = { green: 0.95, amber: 0.85 };
@@ -18,9 +18,10 @@ function worst(...xs) {
   return v.length ? v.reduce((a, b) => (RANK[b] > RANK[a] ? b : a)) : null;
 }
 
-function scheduleSummary(schedule, p, at) {
+function scheduleSummary(schedule, p, at, progress) {
   const planned = cpm(schedule, p.startDate);
-  const fc = at ? cpm(schedule, p.startDate, { statusDate: at }) : planned;
+  const snaps = progress.filter((s) => !at || s.date <= at);
+  const fc = at ? cpm(withProgress(schedule, snaps), p.startDate, { statusDate: at }) : planned;
   const baselines = (schedule.activities || []).map((a) => a.baselineFinish).filter(Boolean).sort();
   const baselineFinish = baselines.length ? baselines[baselines.length - 1] : planned.projectFinish;
   return {
@@ -39,7 +40,7 @@ function status(data, date) {
   const th = { ...DEFAULT_TH, ...(p.thresholds || {}) };
   const m = p.methodology;
   const lastSnap = data.progress.length ? data.progress[data.progress.length - 1] : null;
-  const at = date || p.statusDate || (lastSnap ? lastSnap.date : null);
+  const at = date || evm.effectiveDate(p, data.progress);
   const out = {
     project: { name: p.name, methodology: m, language: p.language, currency: p.currency, startDate: p.startDate, endDate: p.endDate },
     date: at,
@@ -52,7 +53,7 @@ function status(data, date) {
     else out.notes.push('EVM_UNAVAILABLE');
 
     if (data.schedule) {
-      if ((data.schedule.activities || []).length) out.schedule = scheduleSummary(data.schedule, p, at);
+      if ((data.schedule.activities || []).length) out.schedule = scheduleSummary(data.schedule, p, at, data.progress);
       else out.notes.push('SCHEDULE_EMPTY');
     }
   }

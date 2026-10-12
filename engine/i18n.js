@@ -20,7 +20,7 @@ const MESSAGES = {
   UNKNOWN_COMMAND: { en: 'Unknown command "{cmd}". Available: {commands}', ar: 'أمر غير معروف "{cmd}". الأوامر المتاحة: {commands}' },
   EVM_UNAVAILABLE: { en: 'EVM not computed: budget.json or progress snapshots are missing', ar: 'لم يُحسب EVM: ملف budget.json أو لقطات التقدم غير موجودة' },
   SCHEDULE_EMPTY: { en: 'Schedule has no activities yet', ar: 'الجدول لا يحتوي على أنشطة بعد' },
-  OP_INVALID: { en: 'Unknown operation "{op}". Use add, update, set or baseline', ar: 'عملية غير معروفة "{op}". استخدم add أو update أو set أو baseline' },
+  OP_INVALID: { en: 'Unknown operation "{op}". Use add, update, set, baseline or document', ar: 'عملية غير معروفة "{op}". استخدم add أو update أو set أو baseline أو document' },
   FILE_NOT_ALLOWED: { en: 'Operation "{op}" is not allowed on {file}', ar: 'العملية "{op}" غير مسموحة على {file}' },
   ITEM_NOT_FOUND: { en: '{file}: no item with id "{id}"', ar: '{file}: لا يوجد عنصر بالمعرّف "{id}"' },
   APPROVAL_RESOLVED: { en: 'Approval {id} is already {status}', ar: 'طلب الموافقة {id} تمت معالجته مسبقًا ({status})' },

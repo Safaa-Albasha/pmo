@@ -9,7 +9,7 @@ const evm = require('./evm');
 const agile = require('./agile');
 const risk = require('./risk');
 const approvals = require('./approvals');
-const { cpm } = require('./schedule');
+const { cpm, withProgress } = require('./schedule');
 const { status } = require('./status');
 const { createProject } = require('./init');
 
@@ -57,8 +57,12 @@ const COMMANDS = {
   schedule: (dir, o) => {
     const d = loadValid(dir);
     const s = need(d.schedule, 'schedule.json');
-    const at = o.date || d.project.statusDate || null;
-    return { planned: cpm(s, d.project.startDate), forecast: at ? cpm(s, d.project.startDate, { statusDate: at }) : null };
+    const at = o.date || evm.effectiveDate(d.project, d.progress);
+    const snaps = d.progress.filter((p) => !at || p.date <= at);
+    return {
+      planned: cpm(s, d.project.startDate),
+      forecast: at ? cpm(withProgress(s, snaps), d.project.startDate, { statusDate: at }) : null,
+    };
   },
   agile: (dir) => {
     const d = loadValid(dir);
