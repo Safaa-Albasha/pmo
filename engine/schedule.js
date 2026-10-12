@@ -8,7 +8,7 @@ function normPreds(a) {
   );
 }
 
-function topoOrder(acts) {
+function topoOrder(acts, getPreds = normPreds) {
   const ids = new Set(acts.map((a) => a.id));
   const indeg = {};
   const succ = {};
@@ -17,7 +17,7 @@ function topoOrder(acts) {
     succ[a.id] = [];
   }
   for (const a of acts) {
-    for (const p of normPreds(a)) {
+    for (const p of getPreds(a)) {
       if (!ids.has(p.id)) continue;
       indeg[a.id]++;
       succ[p.id].push(a.id);
@@ -39,66 +39,82 @@ function findCycle(acts) {
   return topoOrder(acts).cycle;
 }
 
-function finishDate(start, ef, dur) {
-  return addDays(start, dur > 0 ? ef - 1 : ef);
+// Turn source activities into network nodes. With a status date (forecast mode):
+// complete → zero remaining duration; in progress → remaining duration starting at the
+// status date, predecessors ignored (work already started); not started → cannot start
+// before the status date.
+function toNodes(acts, sd) {
+  return acts.map((a) => {
+    const dur = Number(a.duration) || 0;
+    const pct = Number(a.percentComplete) || 0;
+    if (sd === null) return { src: a, dur, min: 0, preds: normPreds(a), state: null };
+    if (pct >= 100) return { src: a, dur: 0, min: 0, preds: normPreds(a), state: 'complete' };
+    if (pct > 0) return { src: a, dur: Math.ceil(dur * (1 - pct / 100)), min: sd, preds: [], state: 'in-progress' };
+    return { src: a, dur, min: sd, preds: normPreds(a), state: 'not-started' };
+  });
 }
 
-function cpm(schedule, startDate) {
+function cpm(schedule, startDate, { statusDate = null } = {}) {
   const acts = schedule.activities || [];
-  const byId = Object.fromEntries(acts.map((a) => [a.id, a]));
-  const { order, cycle } = topoOrder(acts);
+  const sd = statusDate ? daysBetween(startDate, statusDate) + 1 : null;
+  const nodes = toNodes(acts, sd);
+  const byId = Object.fromEntries(nodes.map((n) => [n.src.id, n]));
+  const { order, cycle } = topoOrder(
+    nodes.map((n) => ({ id: n.src.id, preds: n.preds })),
+    (x) => x.preds
+  );
   if (cycle) throw new PmoError('CYCLE', { file: 'schedule.json', ids: cycle.join(', ') }, 'schedule.json');
 
-  const r = {};
-  for (const a of acts) r[a.id] = { dur: Number(a.duration) || 0 };
-
   for (const id of order) {
-    let es = 0;
-    for (const p of normPreds(byId[id])) {
-      const q = r[p.id];
+    const n = byId[id];
+    let es = n.min;
+    for (const p of n.preds) {
+      const q = byId[p.id];
       if (!q) continue;
-      const d = r[id].dur;
-      const c = { FS: q.ef + p.lag, SS: q.es + p.lag, FF: q.ef + p.lag - d, SF: q.es + p.lag - d }[p.type];
+      const c = { FS: q.ef + p.lag, SS: q.es + p.lag, FF: q.ef + p.lag - n.dur, SF: q.es + p.lag - n.dur }[p.type];
       es = Math.max(es, c);
     }
-    r[id].es = es;
-    r[id].ef = es + r[id].dur;
+    n.es = es;
+    n.ef = es + n.dur;
   }
 
-  const duration = acts.length ? Math.max(...acts.map((a) => r[a.id].ef)) : 0;
-  const succ = Object.fromEntries(acts.map((a) => [a.id, []]));
-  for (const a of acts) for (const p of normPreds(a)) if (succ[p.id]) succ[p.id].push({ id: a.id, type: p.type, lag: p.lag });
+  const duration = nodes.length ? Math.max(...nodes.map((n) => n.ef)) : 0;
+  const succ = Object.fromEntries(nodes.map((n) => [n.src.id, []]));
+  for (const n of nodes) for (const p of n.preds) if (succ[p.id]) succ[p.id].push({ id: n.src.id, type: p.type, lag: p.lag });
 
   for (const id of [...order].reverse()) {
+    const n = byId[id];
     let lf = duration;
-    const d = r[id].dur;
     for (const s of succ[id]) {
-      const q = r[s.id];
-      const c = { FS: q.ls - s.lag, SS: q.ls - s.lag + d, FF: q.lf - s.lag, SF: q.lf - s.lag + d }[s.type];
+      const q = byId[s.id];
+      const c = { FS: q.ls - s.lag, SS: q.ls - s.lag + n.dur, FF: q.lf - s.lag, SF: q.lf - s.lag + n.dur }[s.type];
       lf = Math.min(lf, c);
     }
-    r[id].lf = lf;
-    r[id].ls = lf - d;
+    n.lf = lf;
+    n.ls = lf - n.dur;
   }
 
-  const activities = acts.map((a) => {
-    const x = r[a.id];
-    const earlyFinish = finishDate(startDate, x.ef, x.dur);
+  const activities = nodes.map((n) => {
+    const a = n.src;
+    const complete = n.state === 'complete';
+    const earlyFinish = complete ? null : addDays(startDate, n.dur > 0 ? n.ef - 1 : n.ef);
     return {
       id: a.id,
       name: a.name || a.id,
-      duration: x.dur,
-      es: x.es,
-      ef: x.ef,
-      ls: x.ls,
-      lf: x.lf,
-      totalFloat: x.ls - x.es,
-      critical: x.ls - x.es === 0,
-      earlyStart: addDays(startDate, x.es),
+      duration: Number(a.duration) || 0,
+      remainingDuration: n.dur,
+      state: n.state,
+      es: n.es,
+      ef: n.ef,
+      ls: n.ls,
+      lf: n.lf,
+      totalFloat: n.ls - n.es,
+      critical: !complete && n.ls - n.es === 0,
+      earlyStart: complete ? null : addDays(startDate, n.es),
       earlyFinish,
       percentComplete: a.percentComplete ?? null,
       baselineFinish: a.baselineFinish || null,
-      finishVarianceDays: a.baselineFinish ? daysBetween(a.baselineFinish, earlyFinish) : null,
+      finishVarianceDays: a.baselineFinish && earlyFinish ? daysBetween(a.baselineFinish, earlyFinish) : null,
     };
   });
 
@@ -109,7 +125,8 @@ function cpm(schedule, startDate) {
 
   return {
     projectDuration: duration,
-    projectFinish: duration > 0 ? addDays(startDate, duration - 1) : startDate,
+    projectFinish: duration > 0 ? addDays(startDate, duration - 1) : statusDate || startDate,
+    statusDate,
     activities,
     criticalPath,
   };

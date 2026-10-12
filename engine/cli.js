@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 'use strict';
+const fs = require('fs');
 const path = require('path');
-const { PmoError, loadProject } = require('./io');
+const { PmoError, loadProject, readJson } = require('./io');
 const { format } = require('./i18n');
 const { validate } = require('./validate');
 const evm = require('./evm');
 const agile = require('./agile');
 const risk = require('./risk');
+const approvals = require('./approvals');
 const { cpm } = require('./schedule');
 const { status } = require('./status');
 const { createProject } = require('./init');
@@ -35,6 +37,16 @@ const need = (obj, file) => {
   return obj;
 };
 
+function readProposal(o) {
+  try {
+    if (typeof o.json === 'string') return JSON.parse(o.json);
+    if (typeof o.file === 'string') return JSON.parse(fs.readFileSync(o.file, 'utf8').replace(/^﻿/, ''));
+  } catch (e) {
+    throw new PmoError('JSON_INVALID', { file: o.file || '--json', detail: e.message });
+  }
+  throw new PmoError('ARG_MISSING', { arg: 'json | --file' });
+}
+
 const COMMANDS = {
   validate: (dir) => validate(loadProject(dir)),
   status: (dir, o) => status(loadValid(dir), o.date),
@@ -42,9 +54,11 @@ const COMMANDS = {
     const d = loadValid(dir);
     return { current: evm.fromProject(d, o.date), trend: evm.trend(d) };
   },
-  schedule: (dir) => {
+  schedule: (dir, o) => {
     const d = loadValid(dir);
-    return cpm(need(d.schedule, 'schedule.json'), d.project.startDate);
+    const s = need(d.schedule, 'schedule.json');
+    const at = o.date || d.project.statusDate || null;
+    return { planned: cpm(s, d.project.startDate), forecast: at ? cpm(s, d.project.startDate, { statusDate: at }) : null };
   },
   agile: (dir) => {
     const d = loadValid(dir);
@@ -52,6 +66,16 @@ const COMMANDS = {
     return agile.analyze(need(d.backlog, 'scope/backlog.json'), { bac: d.budget ? d.budget.bac : null, ac: last ? last.actualCost : null });
   },
   risk: (dir) => risk.analyze(need(loadValid(dir).risks, 'risks.json')),
+  propose: (dir, o) => approvals.propose(dir, readProposal(o)),
+  approvals: (dir, o) => approvals.list(dir, typeof o.status === 'string' ? o.status : 'pending'),
+  apply: (dir, o) => {
+    if (typeof o.id !== 'string') throw new PmoError('ARG_MISSING', { arg: 'id' });
+    return approvals.apply(dir, o.id, o.decision, { by: typeof o.by === 'string' ? o.by : null, note: typeof o.note === 'string' ? o.note : null });
+  },
+  decisions: (dir) => {
+    const doc = readJson(dir, 'decisions.json', { optional: true });
+    return doc ? doc.decisions : [];
+  },
   init: (dir, o) =>
     createProject(dir, {
       name: o.name,

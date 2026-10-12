@@ -20,8 +20,15 @@ test('waterfall example', () => {
   assert.strictEqual(s.date, '2026-03-31');
   assert.deepStrictEqual([s.evm.pv, s.evm.ev, s.evm.ac, s.evm.spi, s.evm.cpi], [220000, 200000, 215000, 0.9091, 0.9302]);
   assert.deepStrictEqual(s.health, { overall: 'amber', schedule: 'amber', cost: 'amber' });
-  assert.strictEqual(s.schedule.projectFinish, '2026-05-30');
-  assert.deepStrictEqual(s.schedule.criticalPath, ['A', 'C', 'D', 'E', 'F']);
+  assert.deepStrictEqual(s.schedule, {
+    plannedFinish: '2026-05-30',
+    baselineFinish: '2026-05-30',
+    forecastFinish: '2026-06-23',
+    deadline: '2026-06-30',
+    slipDays: 24,
+    deadlineVarianceDays: -7,
+    criticalPath: ['D', 'E', 'F'],
+  });
   assert.strictEqual(s.risks.top3[0].id, 'R1');
   assert.strictEqual(s.progress.percentComplete, 40);
   assert.strictEqual(s.agile, undefined);
@@ -46,6 +53,9 @@ test('hybrid example', () => {
   assert.strictEqual(s.agile.donePoints, 60);
   assert.strictEqual(s.progress.pointsRemaining, 60);
   assert.strictEqual(s.progress.percentComplete, 55);
+  assert.strictEqual(s.schedule.forecastFinish, '2026-07-20');
+  assert.strictEqual(s.schedule.baselineFinish, '2026-06-23');
+  assert.strictEqual(s.schedule.slipDays, 27);
 });
 
 test('missing progress adds note instead of throwing', () => {

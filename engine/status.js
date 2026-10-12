@@ -18,6 +18,22 @@ function worst(...xs) {
   return v.length ? v.reduce((a, b) => (RANK[b] > RANK[a] ? b : a)) : null;
 }
 
+function scheduleSummary(schedule, p, at) {
+  const planned = cpm(schedule, p.startDate);
+  const fc = at ? cpm(schedule, p.startDate, { statusDate: at }) : planned;
+  const baselines = (schedule.activities || []).map((a) => a.baselineFinish).filter(Boolean).sort();
+  const baselineFinish = baselines.length ? baselines[baselines.length - 1] : planned.projectFinish;
+  return {
+    plannedFinish: planned.projectFinish,
+    baselineFinish,
+    forecastFinish: fc.projectFinish,
+    deadline: p.endDate,
+    slipDays: daysBetween(baselineFinish, fc.projectFinish),
+    deadlineVarianceDays: daysBetween(p.endDate, fc.projectFinish),
+    criticalPath: fc.criticalPath,
+  };
+}
+
 function status(data, date) {
   const p = data.project;
   const th = { ...DEFAULT_TH, ...(p.thresholds || {}) };
@@ -36,15 +52,8 @@ function status(data, date) {
     else out.notes.push('EVM_UNAVAILABLE');
 
     if (data.schedule) {
-      if ((data.schedule.activities || []).length) {
-        const c = cpm(data.schedule, p.startDate);
-        out.schedule = {
-          projectFinish: c.projectFinish,
-          plannedFinish: p.endDate,
-          finishVarianceDays: daysBetween(p.endDate, c.projectFinish),
-          criticalPath: c.criticalPath,
-        };
-      } else out.notes.push('SCHEDULE_EMPTY');
+      if ((data.schedule.activities || []).length) out.schedule = scheduleSummary(data.schedule, p, at);
+      else out.notes.push('SCHEDULE_EMPTY');
     }
   }
 

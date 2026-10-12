@@ -1,7 +1,9 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert');
+const path = require('path');
 const { cpm, findCycle } = require('../engine/schedule');
+const { loadProject } = require('../engine/io');
 
 const net = {
   activities: [
@@ -58,4 +60,27 @@ test('empty schedule', () => {
   const r = cpm({ activities: [] }, '2026-01-01');
   assert.strictEqual(r.projectDuration, 0);
   assert.deepStrictEqual(r.criticalPath, []);
+});
+
+test('forecast uses progress at status date', () => {
+  const pct = { A: 100, B: 50, C: 0, D: 0 };
+  const sched = { activities: net.activities.map((a) => ({ ...a, percentComplete: pct[a.id] })) };
+  const r = cpm(sched, '2026-01-01', { statusDate: '2026-01-05' });
+  const by = Object.fromEntries(r.activities.map((a) => [a.id, a]));
+  assert.strictEqual(by.A.state, 'complete');
+  assert.strictEqual(by.A.critical, false);
+  assert.strictEqual(by.A.earlyFinish, null);
+  assert.deepStrictEqual([by.B.state, by.B.remainingDuration, by.B.es, by.B.ef], ['in-progress', 1, 5, 6]);
+  assert.deepStrictEqual([by.C.es, by.C.ef], [5, 9]);
+  assert.deepStrictEqual([by.D.es, by.D.ef], [9, 11]);
+  assert.strictEqual(by.B.totalFloat, 3);
+  assert.strictEqual(r.projectFinish, '2026-01-11');
+  assert.deepStrictEqual(r.criticalPath, ['C', 'D']);
+});
+
+test('forecast on waterfall example', () => {
+  const d = loadProject(path.join(__dirname, '..', 'examples', 'waterfall', '.pmo'));
+  const r = cpm(d.schedule, d.project.startDate, { statusDate: d.project.statusDate });
+  assert.strictEqual(r.projectFinish, '2026-06-23');
+  assert.deepStrictEqual(r.criticalPath, ['D', 'E', 'F']);
 });
