@@ -2,6 +2,8 @@
 
 ## 1.0.1 — 2026-10-12
 
+- Step-by-step download & install guide in Arabic and English (INSTALL.ar.md, INSTALL.md); published home moved to github.com/Safaa-Albasha/pmo.
+
 - Currency is fully open: any ISO 4217 code or custom label chosen by the project manager; `/pmo:new` asks it as an open question; validation only requires short text. Reports format ISO codes with the local symbol and show custom labels as typed.
 
 ## 1.0.0 — 2026-10-12
