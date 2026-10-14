@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Live dashboard** (`npm run dashboard -- --dir <project>/.pmo`, `node engine/dashboard.js`, skill `/pmo:dashboard`): local read-only web page on http://localhost:4173 with zero dependencies. Pages: project health (RAG, SPI/CPI, EVM, EAC methods, forecast vs baseline, S-curve, index trend), schedule (Gantt baseline vs forecast, critical path), backlog & sprints (velocity, burnup, burndown, AgileEVM), risks (heat map + register), issues, changes, quality, stakeholders, approvals queue with before/after and decision log, lessons, the 11 agents (read from `agents/*.md`: skills, data files, autonomy, last activity), and a data explorer. Arabic/English with RTL, light/dark, keyboard navigation; refreshes when `.pmo/` changes (server-sent events). All figures come from the engine (`buildReportData`). Server answers GET only, binds 127.0.0.1, checks the Host header, and serves only files inside the project folder. Tests in `tests/dashboard.test.js`.
+
 ## 1.0.1 — 2026-10-12
 
 - Step-by-step download & install guide in Arabic and English (INSTALL.ar.md, INSTALL.md); published home moved to github.com/Safaa-Albasha/pmo.

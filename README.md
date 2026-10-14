@@ -41,6 +41,7 @@ Try it first on a sample: copy `examples/waterfall` (Arabic), `examples/agile` (
 | `/pmo:weekly` | Full weekly cycle with all agents and a one-screen briefing |
 | `/pmo:approvals` | Decide pending proposals; every decision is logged |
 | `/pmo:report` | Interactive HTML report and presentation |
+| `/pmo:dashboard` | Live local dashboard on localhost (read-only) |
 | `/pmo:risks` | Risk register, heat map, new/updated risks |
 | `/pmo:change` | Change requests with impact analysis |
 | `/pmo:sprint` | Sprint planning, review and close (agile/hybrid) |
@@ -76,6 +77,32 @@ Agents submit a proposal (what changes, why, impact). You approve, reject or edi
 | `drafts/` · `reports/` | drafts and generated reports | direct |
 
 The newest progress snapshot sets the status date; its `activityProgress` drives the schedule forecast. All files are plain JSON/Markdown — keep `.pmo/` in Git for a full audit trail.
+
+## Dashboard
+
+A live, read-only dashboard of the project on your own machine — no internet, no CDN, no extra installs.
+
+```bash
+npm run dashboard -- --dir examples/waterfall/.pmo      # try it on a sample
+node engine/dashboard.js --dir /path/to/project/.pmo --port 4173
+```
+
+Open **http://localhost:4173**. In Claude Code: `/pmo:dashboard`.
+
+| Page | Shows |
+|---|---|
+| Project | RAG (overall, schedule, cost), % complete, SPI/CPI, PV/EV/AC, SV/CV, EAC (3 methods), ETC, VAC, TCPI, forecast finish vs baseline, budget and reserves, S-curve, CPI/SPI trend, top risks, decisions needed, next 30 days, progress snapshots |
+| Schedule | Gantt baseline vs forecast, status date and deadline lines, critical path, activity table with float |
+| Backlog & sprints | velocity, burnup, burndown, planned vs completed points, sprints, backlog items, AgileEVM (agile/hybrid) |
+| Risks · Issues · Changes · Quality · Stakeholders · Lessons | the registers, risk heat map (click a cell to filter), EMV vs contingency, quality metrics vs target, defects, power/interest grid |
+| Agents | the 11 agents read from `agents/*.md`: role, skills, data files (🔒 = controlled, via approval), what is automatic / needs your approval / never, last activity from `approvals.json` and `decisions.json` |
+| Approvals & decisions | pending proposals with before/after, decision log (decide in `/pmo:approvals`) |
+| Data explorer | every file in `.pmo/` with a JSON viewer |
+
+- Every number is computed by the engine (`buildReportData` → the same `status`, EVM, CPM, agile and risk functions as the CLI and the report).
+- Arabic/English toggle with right-to-left layout, light/dark theme, keyboard navigation.
+- Refreshes by itself when anything in `.pmo/` changes.
+- Read-only and local: listens on 127.0.0.1, answers only `GET`, serves only files inside the project folder.
 
 ## Connectors
 
