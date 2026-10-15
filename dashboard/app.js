@@ -107,8 +107,8 @@
     var parts = t('decideHint').split('/pmo:approvals');
     return el('p', { class: 'note' }, parts[0], parts.length > 1 ? [el('code', { dir: 'ltr' }, '/pmo:approvals'), parts[1]] : null);
   }
-  function pageHead(title, sub) {
-    return el('div', { class: 'page-head' }, el('h1', { tabindex: '-1', id: 'page-title' }, title), sub ? el('div', { class: 'sub' }, sub) : null);
+  function pageHead(title, sub, actions) {
+    return el('div', { class: 'page-head' }, el('div', {}, el('h1', { tabindex: '-1', id: 'page-title' }, title), sub ? el('div', { class: 'sub' }, sub) : null), actions || null);
   }
 
   // JSON with token colours, built from text nodes (never innerHTML).
@@ -404,13 +404,14 @@
         el('span', {}, el('i', { style: 'background:var(--green)' }), t('legendComplete')),
         el('span', {}, el('i', { style: 'background:var(--amber-line)' }), t('legendStatus')),
         el('span', {}, el('i', { style: 'background:var(--red);height:2px' }), t('legendDeadline')))]));
-    kids.push(card(t('activities'), table(['ID', t('activity'), t('baselineFinish'), t('start'), t('forecastFinish'), '%', t('float'), t('critical'), t('state')], acts.map(function (a) {
+    var at = withActions(['ID', t('activity'), t('baselineFinish'), t('start'), t('forecastFinish'), '%', t('float'), t('critical'), t('state')], acts.map(function (a) {
       var varDays = a.baselineFinish && a.forecastFinish ? Math.round((ms(a.forecastFinish) - ms(a.baselineFinish)) / 86400000) : null;
       return [idCell(a.id), pick(a.name), el('span', { class: 'num' }, fdate(a.baselineFinish)), el('span', { class: 'num' }, fdate(a.forecastStart)),
         el('span', { class: 'num ' + (varDays > 0 ? 'neg' : '') }, fdate(a.forecastFinish) + (varDays ? ' (' + (varDays > 0 ? '+' : '') + nf(varDays) + ')' : '')),
         el('span', { class: 'num' }, nf(a.percentComplete) + '%'), el('span', { class: 'num' }, a.state === 'complete' ? '—' : nf(a.totalFloat)),
         a.critical ? el('span', { class: 'lv lv-high' }, t('yes')) : t('no'), word('st_', a.state)];
-    }), t('activities'))));
+    }), acts, function (a) { return rowBtn('activity.progress', a.id, { percentComplete: a.percentComplete }, t('updateProgress')); });
+    kids.push(card(t('activities'), table(at[0], at[1], t('activities'))));
     return kids;
   }
 
@@ -455,14 +456,15 @@
         el('span', { class: 'num' }, nf(s.plannedPoints)), el('span', { class: 'num' }, s.completedPoints !== undefined ? nf(s.completedPoints) : '—')];
     }), t('sprints'))));
     var items = (bl && bl.items) || [];
-    kids.push(card(t('items'), table(['ID', t('items'), t('points'), t('sprint'), t('status')], items.map(function (i) {
+    var it = withActions(['ID', t('items'), t('points'), t('sprint'), t('status')], items.map(function (i) {
       return [idCell(i.id), pick(i.title), el('span', { class: 'num' }, nf(i.points)), i.sprint || '—', word('st_', i.status)];
-    }), t('items'))));
+    }), items, function (i) { return rowBtn('item.status', i.id, { status: i.status }, t('changeStatus')); });
+    kids.push(card(t('items'), table(it[0], it[1], t('items'))));
     return kids;
   }
 
   function pRisks() {
-    var kids = [pageHead(t('nav_risks'))].concat(problems());
+    var kids = [pageHead(t('nav_risks'), null, headActions([addBtn('risk.add')]))].concat(problems());
     var Rk = sec('risks');
     if (!Rk) return kids.concat(empty());
     var lvl = function (sc) { return sc >= 15 ? 'high' : sc >= 6 ? 'medium' : 'low'; };
@@ -502,27 +504,35 @@
     kids.push(card(t('allRisks'), [
       riskFilter ? el('p', { class: 'note' }, t('filtered') + ' (' + t('probability') + ' ' + riskFilter[0] + ' × ' + t('impact') + ' ' + riskFilter[1] + ') ',
         el('button', { type: 'button', onclick: function () { riskFilter = null; render(false); } }, t('showAll'))) : null,
-      table(['ID', t('nav_risks'), t('probability'), t('impact'), t('score'), t('level'), t('status'), t('owner'), t('response'), t('emv')], rows.map(function (x) {
+      table.apply(null, withActions(['ID', t('nav_risks'), t('probability'), t('impact'), t('score'), t('level'), t('status'), t('owner'), t('response'), t('emv')], rows.map(function (x) {
         return [idCell(x.id), pick(x.title), el('span', { class: 'num' }, nf(x.probability)), el('span', { class: 'num' }, nf(x.impact)),
           el('span', { class: 'num' }, nf(x.score)), el('span', { class: 'lv lv-' + x.level }, t('lv_' + x.level)), word('st_', x.status),
           pick(x.owner) || '—', (x.responseStrategy ? word('rs_', x.responseStrategy) + (x.response ? ': ' : '') : '') + pick(x.response || ''),
           el('span', { class: 'num' }, money(x.emv))];
-      }), t('allRisks'))]));
+      }), rows, function (x) {
+        var raw = reg('risks').filter(function (r) { return r.id === x.id; })[0] || x;
+        var v = {}; ['probability', 'impact', 'status', 'owner', 'responseStrategy', 'response', 'costImpact'].forEach(function (k) { v[k] = raw[k]; });
+        return rowBtn('risk.update', x.id, v, t('proposeEdit'));
+      }).concat([t('allRisks')]))]));
     return kids;
   }
 
   function pIssues() {
     var list = reg('issues');
-    return [pageHead(t('nav_issues'))].concat(problems(), card(t('nav_issues'), table(['ID', t('nav_issues'), t('priority'), t('impactArea'), t('owner'), t('raised'), t('due'), t('status')], list.map(function (i) {
+    var tb = withActions(['ID', t('nav_issues'), t('priority'), t('impactArea'), t('owner'), t('raised'), t('due'), t('status')], list.map(function (i) {
       var overdue = i.due && R() && R().meta.statusDate && i.due < R().meta.statusDate && ['resolved', 'closed'].indexOf(i.status) < 0;
       return [idCell(i.id), pick(i.title), el('span', { class: 'lv lv-' + (i.priority || '') }, word('lv_', i.priority)), word('ty_', i.impactArea), pick(i.owner) || '—',
         el('span', { class: 'num' }, fdate(i.raised)), el('span', { class: 'num ' + (overdue ? 'neg' : '') }, fdate(i.due)), word('st_', i.status)];
-    }), t('nav_issues'))));
+    }), list, function (i) {
+      var v = {}; Object.keys(kindSpec('issue.update').fields).forEach(function (k) { v[k] = i[k]; });
+      return rowBtn('issue.update', i.id, v, t('editItem'));
+    });
+    return [pageHead(t('nav_issues'), null, headActions([addBtn('issue.add')]))].concat(problems(), card(t('nav_issues'), table(tb[0], tb[1], t('nav_issues'))));
   }
 
   function pChanges() {
     var list = reg('changes');
-    return [pageHead(t('nav_changes'))].concat(problems(), card(t('changeRequests'), table(['ID', t('change'), t('type'), t('requestedBy'), t('date'), t('scheduleImpact'), t('costImpact'), t('status')], list.map(function (c) {
+    return [pageHead(t('nav_changes'), null, headActions([addBtn('change.add')]))].concat(problems(), card(t('changeRequests'), table(['ID', t('change'), t('type'), t('requestedBy'), t('date'), t('scheduleImpact'), t('costImpact'), t('status')], list.map(function (c) {
       var im = c.impact || {};
       return [idCell(c.id), pick(c.title), word('ty_', c.type), pick(c.requestedBy) || '—', el('span', { class: 'num' }, fdate(c.date)),
         el('span', { class: 'num' }, im.scheduleDays !== undefined ? nf(im.scheduleDays) + ' ' + t('days') : '—'),
@@ -552,7 +562,7 @@
   }
 
   function pStakeholders() {
-    var kids = [pageHead(t('nav_stakeholders'))].concat(problems());
+    var kids = [pageHead(t('nav_stakeholders'), null, headActions([addBtn('stakeholder.add')]))].concat(problems());
     var list = sec('stakeholders') || [];
     var raw = reg('stakeholders');
     if (!raw.length) return kids.concat(empty());
@@ -572,7 +582,7 @@
 
   function pApprovals() {
     var all = reg('approvals'), pend = all.filter(function (a) { return a.status === 'pending'; });
-    var kids = [pageHead(t('nav_approvals')), hint()].concat(problems());
+    var kids = [pageHead(t('nav_approvals')), editOn() ? el('p', { class: 'note' }, t('approvalsEditHint')) : hint()].concat(problems());
     kids.push(el('h2', { class: 'sr' }, t('pendingQueue')));
     kids.push(card(t('pendingQueue') + ' (' + nf(pend.length) + ')', pend.length ? pend.map(function (a) {
       var op = a.operation || {};
@@ -585,7 +595,8 @@
           a.impact ? [el('dt', {}, t('impact')), el('dd', {}, a.impact)] : null),
         el('div', { class: 'diff' },
           el('div', {}, el('h3', {}, t('before')), jsonBlock(a.before === undefined ? null : a.before)),
-          el('div', {}, el('h3', {}, t('after')), jsonBlock(a.after === undefined ? null : a.after))));
+          el('div', {}, el('h3', {}, t('after')), jsonBlock(a.after === undefined ? null : a.after))),
+        approvalActions(a));
     }) : empty(t('noneYet'))));
     var dec = reg('decisions').slice().reverse();
     kids.push(card(t('decisionLog'), table(['ID', 'APR', t('change'), t('status'), t('by'), t('date'), t('agent')], dec.map(function (d) {
@@ -593,15 +604,16 @@
         d.by || '—', el('span', { class: 'num' }, fdatetime(d.at)), d.agent || '—'];
     }), t('decisionLog'))));
     var resolved = all.filter(function (a) { return a.status !== 'pending'; });
-    if (resolved.length) kids.push(card(t('approved') + ' / ' + t('rejected'), table(['ID', t('change'), t('status'), t('agent')], resolved.map(function (a) {
-      return [idCell(a.id), pick(a.title) || '—', word('st_', a.status), a.agent];
+    if (resolved.length) kids.push(card(t('approved') + ' / ' + t('rejected'), table(['ID', t('change'), t('status'), t('agent'), t('note')], resolved.map(function (a) {
+      return [idCell(a.id), pick(a.title) || '—', word('st_', a.status), a.agent, a.note || '—'];
     }))));
+    kids.push(auditCard());
     return kids;
   }
 
   function pLessons() {
     var list = reg('lessons');
-    return [pageHead(t('nav_lessons'))].concat(problems(), card(null, list.length ? table(['ID', t('date'), t('category'), t('type'), t('situation'), t('recommendation'), t('owner'), t('status')], list.map(function (l) {
+    return [pageHead(t('nav_lessons'), null, headActions([addBtn('lesson.add')]))].concat(problems(), card(null, list.length ? table(['ID', t('date'), t('category'), t('type'), t('situation'), t('recommendation'), t('owner'), t('status')], list.map(function (l) {
       return [idCell(l.id), el('span', { class: 'num' }, fdate(l.date)), word('ty_', l.category), word('lt_', l.type), pick(l.situation) + (l.impact ? ' — ' + pick(l.impact) : ''), pick(l.recommendation), pick(l.owner) || '—', word('st_', l.actionStatus)];
     }), t('nav_lessons')) : empty(t('lessonsEmpty'))));
   }
@@ -672,6 +684,294 @@
     }).catch(function () { fileCache[rel] = { error: t('offline') }; });
   }
 
+  // ---------- edit mode (only when the server was started with --edit) ----------
+  // Writes go to the server's engine endpoints with the session token; the page never builds file paths.
+  // Free records (issues, lessons, backlog status) are saved by the engine; controlled records become
+  // proposals that wait on the Approvals page. Every action is confirmed first and logged in audit.json.
+  var token = null;
+  var opener = null;
+  var quietUntil = 0; // our own write already showed a toast; skip the live-refresh one
+  var tokenStore = {
+    get: function () { try { return sessionStorage.getItem('pmo-dash:token'); } catch (e) { return null; } },
+    set: function (v) { try { sessionStorage.setItem('pmo-dash:token', v); } catch (e) { /* private mode */ } }
+  };
+  function takeToken() {
+    var m = location.hash.match(/(?:^#|[&#])token=([0-9a-f]{16,128})/i);
+    if (m) {
+      tokenStore.set(m[1]);
+      try { history.replaceState(null, '', location.pathname + location.search + '#overview'); } catch (e) { location.hash = '#overview'; }
+    }
+    token = tokenStore.get();
+  }
+  takeToken();
+
+  function editOn() { return !!(S && S.editMode && S.edit); }
+  function canEdit() { return editOn() && !!token; }
+  function kindSpec(kind) { return S.edit.kinds[kind]; }
+  function actionBtn(label, onclick, cls) {
+    return el('button', { type: 'button', class: 'act ' + (cls || ''), disabled: canEdit() ? null : 'disabled', title: canEdit() ? null : t('editNoToken'), onclick: function (e) { opener = e.currentTarget; onclick(); } }, label);
+  }
+  function headActions(btns) { return canEdit() || editOn() ? el('div', { class: 'head-actions' }, btns) : null; }
+
+  function api(path, body) {
+    return fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-PMO-Token': token || '' }, body: JSON.stringify(body), credentials: 'same-origin' })
+      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { return { status: r.status, json: j }; }); });
+  }
+  function errText(res) {
+    var e = (res.json && res.json.error) || {};
+    if (res.status === 401) return t('errToken');
+    if (res.status === 403) return t('errOrigin');
+    return e['message_' + lang] || e.message_en || e.code || t('errGeneric');
+  }
+
+  // Drawer (dialog) shared by every form.
+  function drawerEl() {
+    var d = document.getElementById('drawer');
+    if (d) return d;
+    d = el('div', { id: 'drawer', class: 'drawer-wrap', hidden: 'hidden' },
+      el('div', { class: 'drawer-backdrop', onclick: closeDrawer }),
+      el('aside', { class: 'drawer', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'drawer-title' }));
+    document.body.append(d);
+    return d;
+  }
+  function openDrawer(title, sub, kids) {
+    var d = drawerEl(), box = d.querySelector('.drawer');
+    box.textContent = '';
+    append(box, [el('div', { class: 'drawer-head' },
+      el('div', {}, el('h2', { id: 'drawer-title' }, title), sub ? el('div', { class: 'note' }, sub) : null),
+      el('button', { type: 'button', class: 'icon-btn', 'aria-label': t('close'), onclick: closeDrawer }, '✕')), kids]);
+    d.hidden = false;
+    document.body.classList.add('drawer-open');
+    var f = box.querySelector('input, select, textarea, .drawer-foot button.primary');
+    (f || box.querySelector('button')).focus();
+  }
+  function closeDrawer() {
+    var d = document.getElementById('drawer');
+    if (!d || d.hidden) return;
+    d.hidden = true;
+    document.body.classList.remove('drawer-open');
+    if (opener && document.body.contains(opener)) opener.focus();
+  }
+  function trapFocus(e) {
+    var d = document.getElementById('drawer');
+    if (!d || d.hidden || e.key !== 'Tab') return;
+    var f = d.querySelectorAll('button:not([disabled]), input, select, textarea');
+    if (!f.length) return;
+    var first = f[0], last = f[f.length - 1];
+    if (e.shiftKey && document.activeElement === first) { last.focus(); e.preventDefault(); }
+    else if (!e.shiftKey && document.activeElement === last) { first.focus(); e.preventDefault(); }
+  }
+
+  function fieldLabel(name, f) { return t(f.label || 'f_' + name); }
+  function shown(name, f, v) {
+    if (v === undefined || v === null || v === '') return '—';
+    return f && f.type === 'enum' ? word(f.labels, v) : String(v);
+  }
+  function inputFor(name, f, value) {
+    var id = 'fld-' + name, common = { id: id, name: name, 'aria-describedby': id + '-err' };
+    if (f.req) common.required = 'required';
+    var v = value === undefined || value === null ? '' : String(value);
+    var input;
+    if (f.type === 'enum') {
+      input = el('select', common, f.req && v ? null : el('option', { value: '' }, '—'), f.values.map(function (x) {
+        return el('option', { value: x, selected: x === v ? 'selected' : null }, word(f.labels, x));
+      }));
+    } else if (f.type === 'text' && f.long) {
+      input = el('textarea', Object.assign({ rows: '3', maxlength: String(f.max) }, common));
+      input.value = v;
+    } else {
+      var type = f.type === 'date' ? 'date' : f.type === 'int' || f.type === 'num' ? 'number' : 'text';
+      input = el('input', Object.assign({ type: type, value: v, dir: type === 'text' ? 'auto' : 'ltr' }, common,
+        type === 'number' ? { min: String(f.min), max: String(f.max), step: f.type === 'int' ? '1' : 'any', inputmode: 'decimal' } : {},
+        type === 'text' ? { maxlength: String(f.max) } : {}));
+    }
+    return el('div', { class: 'field' + (f.long ? ' wide' : '') },
+      el('label', { for: id }, fieldLabel(name, f), f.req ? el('span', { class: 'req', 'aria-hidden': 'true' }, ' *') : null),
+      input, el('div', { class: 'field-err', id: id + '-err', role: 'alert' }));
+  }
+  function readForm(form, fields, initial, onlyChanged) {
+    var data = {};
+    Object.keys(fields).forEach(function (name) {
+      var f = fields[name], node = form.elements[name];
+      if (!node) return;
+      var v = node.value.trim();
+      if (v === '') return;
+      var val = f.type === 'int' || f.type === 'num' ? Number(v) : v;
+      if (onlyChanged && initial && String(initial[name] === undefined || initial[name] === null ? '' : initial[name]) === v) return;
+      data[name] = val;
+    });
+    return data;
+  }
+  function showErrors(form, details) {
+    form.querySelectorAll('.field-err').forEach(function (n) { n.textContent = ''; });
+    form.querySelectorAll('[aria-invalid]').forEach(function (n) { n.removeAttribute('aria-invalid'); });
+    var general = [];
+    (details || []).forEach(function (d) {
+      var msg = t('ve_' + d.code).replace('{min}', d.min).replace('{max}', d.max);
+      var n = d.field && form.elements[d.field];
+      if (n && n.setAttribute) { n.setAttribute('aria-invalid', 'true'); document.getElementById('fld-' + d.field + '-err').textContent = msg; }
+      else general.push((d.field && d.field !== '*' ? d.field + ': ' : '') + (d.message ? d.message[lang] || d.message.en : msg));
+    });
+    var g = form.querySelector('.form-err');
+    g.textContent = general.join(' · ');
+    var bad = form.querySelector('[aria-invalid]');
+    if (bad) bad.focus();
+  }
+
+  // One form for every kind. opts: {id, values, approvalId, title}
+  function openForm(kind, opts) {
+    opts = opts || {};
+    var spec = kindSpec(kind), fields = spec.fields, propose = spec.mode === 'propose' || !!opts.approvalId;
+    var isUpdate = spec.op === 'update';
+    var values = opts.values || {};
+    var form = el('form', { class: 'edit-form', novalidate: 'novalidate' });
+    var modeBox = el('div', { class: 'mode-note ' + (propose ? 'propose' : 'record') }, el('b', {}, propose ? t('modePropose') : t('modeRecord')),
+      el('div', {}, propose ? t('modeProposeText') : t('modeRecordText')), el('code', { dir: 'ltr' }, spec.file + (opts.id ? ' #' + opts.id : '')));
+    append(form, [modeBox, el('div', { class: 'form-grid' }, Object.keys(fields).map(function (n) { return inputFor(n, fields[n], values[n]); }))]);
+    if (propose) {
+      append(form, el('div', { class: 'form-grid' },
+        inputFor('reason', Object.assign({}, S.edit.meta.reason, { label: 'f_reason' }), opts.reason),
+        inputFor('impactNote', Object.assign({}, S.edit.meta.impactNote, { label: 'f_impactNote' }), opts.impactNote)));
+    }
+    append(form, [el('div', { class: 'form-err', role: 'alert' }),
+      el('div', { class: 'drawer-foot' },
+        el('button', { type: 'button', onclick: closeDrawer }, t('cancel')),
+        el('button', { type: 'submit', class: 'primary' }, propose ? t('sendForApproval') : t('save')))]);
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var data = readForm(form, fields, values, isUpdate && !opts.approvalId);
+      var missing = Object.keys(fields).filter(function (n) { return fields[n].req && !isUpdate && data[n] === undefined; })
+        .map(function (n) { return { field: n, code: 'FIELD_REQUIRED' }; });
+      var reason = propose ? form.elements.reason.value.trim() : '';
+      if (propose && !reason) missing.push({ field: 'reason', code: 'FIELD_REQUIRED' });
+      if (isUpdate && !Object.keys(data).length) missing.push({ field: '*', code: 'NOTHING_TO_CHANGE' });
+      if (missing.length) return showErrors(form, missing);
+      var body = opts.approvalId
+        ? { id: opts.approvalId, data: data, reason: reason, impactNote: form.elements.impactNote.value.trim() }
+        : { kind: kind, id: opts.id, data: data, reason: propose ? reason : undefined, impactNote: propose ? form.elements.impactNote.value.trim() : undefined };
+      confirmStep(opts.title || t('k_' + kind), Object.keys(data).map(function (n) {
+        var before = isUpdate ? values[n] : undefined;
+        return [fieldLabel(n, fields[n]), isUpdate ? shown(n, fields[n], before) + ' → ' + shown(n, fields[n], data[n]) : shown(n, fields[n], data[n])];
+      }).concat(propose ? [[t('f_reason'), reason]] : []), propose ? t('confirmPropose') : t('confirmRecord'),
+      function () { return api(opts.approvalId ? '/api/approvals/revise' : '/api/edit', body); },
+      function (res) {
+        var r = res.json.result;
+        if (opts.approvalId) return t('revisedToast').replace('{id}', r.approval.id).replace('{old}', opts.approvalId);
+        return r.mode === 'proposal' ? t('proposedToast').replace('{id}', r.approval.id) : t('savedToast').replace('{id}', r.id);
+      },
+      function () { openDrawerForm(); },
+      function (res) { openDrawerForm(); showErrors(form, res.json.error && res.json.error.details); form.querySelector('.form-err').textContent = errText(res); });
+    });
+    function openDrawerForm() {
+      openDrawer(opts.title || t('k_' + kind), opts.id ? (opts.idLabel || opts.id) : null, form);
+    }
+    openDrawerForm();
+  }
+
+  // Confirmation before anything is sent; on success refresh from the engine.
+  function confirmStep(title, rows, question, send, okText, back, onError) {
+    var dl = el('dl', { class: 'facts confirm-list' });
+    rows.forEach(function (r) { dl.append(el('dt', {}, r[0]), el('dd', {}, r[1])); });
+    var status = el('div', { class: 'form-err', role: 'alert' });
+    var go = el('button', { type: 'button', class: 'primary', onclick: function () {
+      go.disabled = true;
+      send().then(function (res) {
+        if (res.status === 200) {
+          quietUntil = Date.now() + 3000;
+          closeDrawer();
+          toast(okText(res));
+          return loadState(false);
+        }
+        go.disabled = false;
+        if (onError) onError(res); else status.textContent = errText(res);
+      }).catch(function () { go.disabled = false; status.textContent = t('offline'); });
+    } }, t('confirm'));
+    openDrawer(t('confirmTitle'), title, [el('p', { class: 'confirm-q' }, question), rows.length ? dl : null, status,
+      el('div', { class: 'drawer-foot' }, back ? el('button', { type: 'button', onclick: back }, t('back')) : el('button', { type: 'button', onclick: closeDrawer }, t('cancel')), go)]);
+    go.focus();
+  }
+
+  function decideFlow(a, decision) {
+    var note = el('textarea', { id: 'fld-note', rows: '3', maxlength: '2000' });
+    var status = el('div', { class: 'form-err', role: 'alert' });
+    var go = el('button', { type: 'button', class: 'primary' + (decision === 'reject' ? ' danger' : ''), onclick: function () {
+      go.disabled = true;
+      api('/api/approvals/decide', { id: a.id, decision: decision, note: note.value.trim() || undefined }).then(function (res) {
+        if (res.status === 200) {
+          quietUntil = Date.now() + 3000;
+          closeDrawer();
+          toast(t(decision === 'approve' ? 'approvedToast' : 'rejectedToast').replace('{id}', a.id));
+          return loadState(false);
+        }
+        go.disabled = false;
+        status.textContent = errText(res);
+      }).catch(function () { go.disabled = false; status.textContent = t('offline'); });
+    } }, decision === 'approve' ? t('approve') : t('reject'));
+    openDrawer(t('confirmTitle'), a.id + ' — ' + pick(a.title || ''), [
+      el('p', { class: 'confirm-q' }, decision === 'approve' ? t('confirmApprove').replace('{file}', a.file || '') : t('confirmReject')),
+      el('div', { class: 'diff' },
+        el('div', {}, el('h3', {}, t('before')), jsonBlock(a.before === undefined ? null : a.before)),
+        el('div', {}, el('h3', {}, t('after')), jsonBlock(a.after === undefined ? null : a.after))),
+      el('div', { class: 'field wide' }, el('label', { for: 'fld-note' }, t('decisionNote')), note),
+      status,
+      el('div', { class: 'drawer-foot' }, el('button', { type: 'button', onclick: closeDrawer }, t('cancel')), go)]);
+  }
+
+  function reviseFlow(a) {
+    var op = a.operation || {};
+    if (a.kind) {
+      var values = op.op === 'add' ? Object.assign({}, op.item, op.item && op.item.impact && typeof op.item.impact === 'object' ? op.item.impact : {}) : Object.assign({}, op.changes);
+      return openForm(a.kind, { approvalId: a.id, id: op.item ? op.item.id : op.id, values: values, reason: a.rationale, impactNote: a.impact, title: t('editProposal') + ' ' + a.id });
+    }
+    var ta = el('textarea', { id: 'fld-operation', rows: '14', dir: 'ltr', class: 'mono', spellcheck: 'false' });
+    ta.value = JSON.stringify(op, null, 2);
+    var reason = el('textarea', { id: 'fld-reason', rows: '2', maxlength: '2000' });
+    reason.value = a.rationale || '';
+    var status = el('div', { class: 'form-err', role: 'alert' });
+    var next = el('button', { type: 'button', class: 'primary', onclick: function () {
+      var parsed;
+      try { parsed = JSON.parse(ta.value); } catch (e) { status.textContent = t('invalidJson') + ': ' + e.message; return; }
+      confirmStep(t('editProposal') + ' ' + a.id, [[t('op'), (parsed.op || '') + ' ' + (parsed.file || '')], [t('f_reason'), reason.value.trim() || '—']], t('confirmRevise'),
+        function () { return api('/api/approvals/revise', { id: a.id, operation: parsed, reason: reason.value.trim() || undefined }); },
+        function (res) { return t('revisedToast').replace('{id}', res.json.result.approval.id).replace('{old}', a.id); },
+        function () { reviseFlow(a); });
+    } }, t('next'));
+    openDrawer(t('editProposal') + ' ' + a.id, pick(a.title || ''), [
+      el('p', { class: 'note' }, t('rawHint')),
+      el('div', { class: 'field wide' }, el('label', { for: 'fld-operation' }, t('rawOperation')), ta),
+      el('div', { class: 'field wide' }, el('label', { for: 'fld-reason' }, t('f_reason')), reason),
+      status,
+      el('div', { class: 'drawer-foot' }, el('button', { type: 'button', onclick: closeDrawer }, t('cancel')), next)]);
+  }
+
+  function approvalActions(a) {
+    if (!editOn()) return null;
+    var op = (a.operation || {}).op;
+    var editable = !!a.kind || ['add', 'update', 'set'].indexOf(op) >= 0;
+    return el('div', { class: 'card-actions' },
+      actionBtn('✓ ' + t('approve'), function () { decideFlow(a, 'approve'); }, 'ok'),
+      actionBtn('✕ ' + t('reject'), function () { decideFlow(a, 'reject'); }, 'no'),
+      editable ? actionBtn('✎ ' + t('editProposal'), function () { reviseFlow(a); }) : el('span', { class: 'note' }, t('cannotEditOp')));
+  }
+
+  // Row/page buttons used by the register pages.
+  function addBtn(kind) { return actionBtn('+ ' + t('k_' + kind), function () { openForm(kind); }, 'primary'); }
+  function rowBtn(kind, id, values, label) {
+    return actionBtn(label, function () { openForm(kind, { id: id, values: values, title: t('k_' + kind) + ' ' + id }); });
+  }
+  function withActions(headers, rows, items, make) {
+    if (!editOn()) return [headers, rows];
+    return [headers.concat([t('actions')]), rows.map(function (r, i) { return r.concat([make(items[i])]); })];
+  }
+  function auditCard() {
+    var log = reg('audit').slice().reverse();
+    if (!log.length && !editOn()) return null;
+    return card(t('auditLog'), table(['ID', t('date'), t('action'), t('file'), 'ID', 'APR', t('by')], log.map(function (e) {
+      return [idCell(e.id), el('span', { class: 'num' }, fdatetime(e.at)), t('action_' + e.action), el('code', { dir: 'ltr' }, e.file || '—'),
+        e.itemId || '—', e.approvalId || '—', e.by || '—'];
+    }), t('auditLog')));
+  }
+
   var RENDER = { overview: pOverview, agents: pAgents, schedule: pSchedule, agile: pAgile, risks: pRisks, issues: pIssues, changes: pChanges,
     quality: pQuality, stakeholders: pStakeholders, approvals: pApprovals, lessons: pLessons, files: pFiles };
 
@@ -711,7 +1011,14 @@
     document.getElementById('project-name').textContent = name;
     var p = S && S.project;
     document.getElementById('project-meta').textContent = p ? [t('m_' + p.methodology), fdate(p.startDate) + ' – ' + fdate(p.endDate), R() ? t('statusDate') + ' ' + fdate(R().meta.statusDate) : null].filter(Boolean).join(' · ') : '';
-    document.getElementById('badge-ro').textContent = t('readOnly');
+    var badge = document.getElementById('badge-ro');
+    badge.textContent = editOn() ? t('editMode') : t('readOnly');
+    badge.classList.toggle('edit', editOn());
+    var strip = document.getElementById('edit-strip');
+    strip.hidden = !editOn();
+    strip.textContent = '';
+    if (editOn()) append(strip, token ? [el('span', { class: 'long' }, t('editStrip')), el('span', { class: 'short' }, t('editStripShort'))] : t('editNoToken'));
+    strip.classList.toggle('warn', editOn() && !token);
     document.getElementById('btn-lang').textContent = t('langSwitch');
     document.getElementById('btn-lang').setAttribute('lang', lang === 'ar' ? 'en' : 'ar');
     document.getElementById('btn-theme').textContent = t('theme');
@@ -751,7 +1058,7 @@
       if (!lang) lang = store.get('lang') || (s.project && s.project.language) || 'en';
       fileCache = {};
       render(first);
-      if (announce) toast(t('updated'));
+      if (announce && Date.now() > quietUntil) toast(t('updated'));
     });
   }
 
@@ -794,8 +1101,8 @@
     this.setAttribute('aria-expanded', open ? 'true' : 'false');
     if (open) { var a = nav.querySelector('a'); if (a) a.focus(); }
   });
-  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeMenu(); });
-  window.addEventListener('hashchange', function () { render(true); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { closeDrawer(); closeMenu(); } trapFocus(e); });
+  window.addEventListener('hashchange', function () { if (/token=/.test(location.hash)) { takeToken(); return; } render(true); });
   window.addEventListener('resize', syncTop);
 
   theme = store.get('theme');

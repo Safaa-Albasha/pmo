@@ -28,6 +28,7 @@ const MESSAGES = {
   PROPOSAL_STALE: { en: 'Approval {id} is stale: the data changed since it was proposed. Reject it and propose again', ar: 'طلب الموافقة {id} قديم: تغيّرت البيانات بعد اقتراحه. ارفضه واقترحه من جديد' },
   IMPORT_FORMAT: { en: 'Cannot import {file}: use .csv, .xlsx or .json (save old .xls files as .xlsx or .csv)', ar: 'لا يمكن استيراد {file}: استخدم ‎.csv أو ‎.xlsx أو ‎.json (احفظ ملفات ‎.xls القديمة بصيغة ‎.xlsx أو ‎.csv)' },
   IMPORT_SHEET: { en: 'Sheet "{sheet}" not found. Sheets: {sheets}', ar: 'الورقة "{sheet}" غير موجودة. الأوراق المتاحة: {sheets}' },
+  INPUT_INVALID: { en: 'The form has {count} invalid field(s)', ar: 'في النموذج {count} حقل غير صحيح' },
   GUARD_DENY_FILE: { en: 'PMO guard: {file} is a controlled record. Propose the change (engine propose) and approve it with /pmo:approvals', ar: 'حارس PMO: الملف {file} سجل محمي. اقترح التغيير (engine propose) ووافق عليه عبر /pmo:approvals' },
   GUARD_DENY_SHELL: { en: 'PMO guard: shell commands may not modify or delete controlled .pmo records. Use the engine and /pmo:approvals', ar: 'حارس PMO: لا يُسمح لأوامر الطرفية بتعديل أو حذف سجلات .pmo المحمية. استخدم المحرّك و/pmo:approvals' },
   GUARD_ASK_APPLY: { en: 'PMO approval: confirm that the project manager decided this ({cmd})', ar: 'موافقة PMO: أكّد أن مدير المشروع اتخذ هذا القرار ({cmd})' },

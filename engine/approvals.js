@@ -16,6 +16,7 @@ const PROTECTED = [
   'scope/wbs.json',
   'decisions.json',
   'approvals.json',
+  'audit.json',
 ];
 const OPS = ['add', 'update', 'set', 'baseline', 'document'];
 // Controlled documents published from a draft in .pmo/drafts/.
@@ -28,6 +29,7 @@ const COLLECTIONS = {
   'issues.json': 'issues',
   'scope/backlog.json': 'items',
   'scope/wbs.json': 'elements',
+  'lessons.json': 'lessons',
 };
 const SET_FILES = ['project.json', 'budget.json'];
 const DATA_KEY = { 'project.json': 'project', 'schedule.json': 'schedule', 'budget.json': 'budget', 'risks.json': 'risks', 'scope/backlog.json': 'backlog' };
@@ -189,4 +191,4 @@ function apply(dir, id, decision, { by, note } = {}) {
   return { approval: a, decision: d };
 }
 
-module.exports = { PROTECTED, propose, apply, list, execute };
+module.exports = { PROTECTED, COLLECTIONS, propose, apply, list, execute, checkValid };

@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 'use strict';
-// Local, read-only project dashboard: a small HTTP server on 127.0.0.1 that serves
-// dashboard/ (plain HTML/CSS/JS, no CDN) and JSON built by the engine itself
-// (status, EVM, CPM, agile, risk — via buildReportData). It never writes to .pmo/.
+// Local project dashboard: a small HTTP server on 127.0.0.1 that serves dashboard/
+// (plain HTML/CSS/JS, no CDN) and JSON built by the engine itself (status, EVM, CPM,
+// agile, risk — via buildReportData). Read-only by default. With --edit it also accepts
+// POST requests carrying a per-session token, and every write goes through engine/edit.js
+// (free records → validate → write; controlled records → propose; decisions → apply).
 const fs = require('fs');
 const http = require('http');
 const path = require('path');
@@ -11,6 +13,7 @@ const { PmoError, loadProject, loadExtras, readJson } = require('./io');
 const { validate } = require('./validate');
 const { buildReportData } = require('./report');
 const { PROTECTED } = require('./approvals');
+const edit = require('./edit');
 const { format } = require('./i18n');
 
 const ROOT = path.join(__dirname, '..');
@@ -22,11 +25,15 @@ const STATIC = {
   '/app.css': ['app.css', 'text/css; charset=utf-8'],
 };
 const MAX_FILE_BYTES = 2 * 1024 * 1024;
+const MAX_BODY_BYTES = 64 * 1024;
+const LOOPBACK = ['127.0.0.1', '::1', '::ffff:127.0.0.1'];
+// Write endpoints (edit mode only) → engine/edit.js function.
+const WRITES = { '/api/edit': 'submit', '/api/approvals/decide': 'decide', '/api/approvals/revise': 'revise' };
 // Project data files an agent definition can mention, longest first so scope/… wins.
 const DATA_FILES = [
   'scope/backlog.json', 'scope/wbs.json', 'project.json', 'charter.md', 'schedule.json', 'budget.json', 'risks.json',
   'changes.json', 'stakeholders.json', 'issues.json', 'quality.json', 'lessons.json', 'approvals.json', 'decisions.json',
-  'progress/', 'drafts/', 'reports/',
+  'audit.json', 'progress/', 'drafts/', 'reports/',
 ];
 
 // ---------- agents (parsed from agents/*.md so the page follows the plugin) ----------
@@ -167,19 +174,29 @@ function signature(dir) {
   return h.digest('hex').slice(0, 12);
 }
 
+// True when target is strictly inside base. p = path module (path.win32 in tests, so Windows rules are checked on any OS).
+function inside(base, target, p = path) {
+  const rel = p.relative(base, target);
+  return rel !== '' && !rel.startsWith('..') && !p.isAbsolute(rel);
+}
+
+// "scope\\backlog.json" (Windows) and "scope/backlog.json" name the same record.
+const posixRel = (rel) => String(rel).replace(/\\/g, '/');
+
 // Resolve a requested path strictly inside the project folder (no traversal, no symlink escape).
 function safeFile(dir, rel) {
-  if (typeof rel !== 'string' || !rel || rel.includes('\0') || path.isAbsolute(rel) || /^[a-zA-Z]:/.test(rel)) return null;
+  if (typeof rel !== 'string' || !rel || rel.includes('\0') || path.isAbsolute(rel) || path.win32.isAbsolute(rel) || /^[a-zA-Z]:/.test(rel)) return null;
+  if (posixRel(rel).split('/').includes('..')) return null;
   const base = fs.realpathSync(dir);
   const target = path.resolve(base, rel);
-  if (target !== base && !target.startsWith(base + path.sep)) return null;
+  if (!inside(base, target)) return null;
   let real;
   try {
     real = fs.realpathSync(target);
   } catch {
     return null;
   }
-  if (!real.startsWith(base + path.sep)) return null;
+  if (!inside(base, real)) return null;
   const st = fs.statSync(real);
   return st.isFile() ? { real, size: st.size } : null;
 }
@@ -192,12 +209,14 @@ function errorOut(e) {
 
 const list = (doc, key) => (doc && Array.isArray(doc[key]) ? doc[key] : []);
 
-function buildState(dir, { root = ROOT } = {}) {
+function buildState(dir, { root = ROOT, editMode = false } = {}) {
   const out = {
     dir,
     generatedAt: new Date().toISOString(),
     version: signature(dir),
-    readOnly: true,
+    readOnly: !editMode,
+    editMode,
+    edit: editMode ? edit.describe() : null,
     project: null,
     validation: null,
     report: null,
@@ -232,12 +251,14 @@ function buildState(dir, { root = ROOT } = {}) {
   out.registers = {
     backlog: data ? data.backlog : opt('scope/backlog.json'),
     issues: list(extras.issues || opt('issues.json'), 'issues'),
+    risks: list(data ? data.risks : opt('risks.json'), 'risks'),
     changes: list(extras.changes || opt('changes.json'), 'changes'),
     stakeholders: list(extras.stakeholders || opt('stakeholders.json'), 'stakeholders'),
     lessons: list(opt('lessons.json'), 'lessons'),
     defects: list(quality, 'defects'),
-    approvals,
+    approvals: approvals.map((a) => (editMode && a.status === 'pending' ? { ...a, kind: edit.kindOf(a.operation) } : a)),
     decisions,
+    audit: list(opt('audit.json'), 'entries'),
     progress: data ? data.progress.map((p) => ({ ...p })) : [],
   };
   const activity = agentActivity(approvals, decisions);
@@ -261,8 +282,49 @@ function send(res, code, body, type = 'application/json; charset=utf-8', extra =
   res.end(buf);
 }
 
-function createServer(dir, { pollMs = 1000, root = ROOT, port = 0 } = {}) {
+const STATUS = {
+  INPUT_INVALID: 400, VALIDATION_FAILED: 400, ARG_MISSING: 400, ENUM_INVALID: 400, ID_DUPLICATE: 400, OP_INVALID: 400, FILE_NOT_ALLOWED: 400,
+  JSON_INVALID: 400, ITEM_NOT_FOUND: 404, FILE_MISSING: 404, APPROVAL_RESOLVED: 409, PROPOSAL_STALE: 409,
+};
+const fail = (code, en, ar) => ({ error: { code, message_en: en, message_ar: ar } });
+
+function sameToken(a, b) {
+  if (typeof a !== 'string' || typeof b !== 'string') return false;
+  const x = Buffer.from(a);
+  const y = Buffer.from(b);
+  return x.length === y.length && crypto.timingSafeEqual(x, y);
+}
+
+// Reads a JSON body up to MAX_BODY_BYTES; calls back with (status, error) or (null, value).
+function readBody(req, cb) {
+  const declared = Number(req.headers['content-length']);
+  if (declared > MAX_BODY_BYTES) {
+    req.resume();
+    return cb(413);
+  }
+  const chunks = [];
+  let size = 0;
+  let over = false;
+  req.on('data', (c) => {
+    if (over) return;
+    size += c.length;
+    if (size > MAX_BODY_BYTES) over = true;
+    else chunks.push(c);
+  });
+  req.on('end', () => {
+    if (over) return cb(413);
+    try {
+      return cb(null, JSON.parse(Buffer.concat(chunks).toString('utf8').replace(/^﻿/, '')));
+    } catch {
+      return cb(400);
+    }
+  });
+  req.on('error', () => cb(400));
+}
+
+function createServer(dir, { pollMs = 1000, root = ROOT, port = 0, editMode = false, token = null } = {}) {
   dir = path.resolve(dir);
+  if (editMode && !token) token = crypto.randomBytes(24).toString('hex');
   const clients = new Set();
   let version = null;
   let timer = null;
@@ -282,11 +344,39 @@ function createServer(dir, { pollMs = 1000, root = ROOT, port = 0 } = {}) {
     version = v;
   };
 
+  // Edit mode: loopback peer → same Origin → session token → JSON body ≤ 64 KB → engine/edit.js.
+  const write = (req, res, fn) => {
+    if (!LOOPBACK.includes(req.socket.remoteAddress)) return send(res, 403, fail('NOT_LOCAL', 'Edits are accepted from this machine only', 'التعديل مسموح من هذا الجهاز فقط'));
+    const origin = String(req.headers.origin || '').toLowerCase();
+    const site = req.headers['sec-fetch-site'];
+    if (!allowedHosts().map((h) => 'http://' + h).includes(origin) || (site && site !== 'same-origin'))
+      return send(res, 403, fail('ORIGIN_NOT_ALLOWED', 'Request must come from the dashboard page itself', 'يجب أن يأتي الطلب من صفحة اللوحة نفسها'));
+    if (!sameToken(req.headers['x-pmo-token'], token))
+      return send(res, 401, fail('TOKEN_REQUIRED', 'Missing or wrong session token: open the link printed in the Terminal', 'رمز الجلسة مفقود أو غير صحيح: افتح الرابط المطبوع في الـTerminal'));
+    if (!/^application\/json\b/i.test(String(req.headers['content-type'] || '')))
+      return send(res, 415, fail('JSON_REQUIRED', 'Send JSON (Content-Type: application/json)', 'أرسل JSON (Content-Type: application/json)'));
+    return readBody(req, (status, body) => {
+      if (status === 413) return send(res, 413, fail('BODY_TOO_LARGE', 'Request is larger than 64 KB', 'الطلب أكبر من 64 KB'), undefined, { Connection: 'close' });
+      if (status) return send(res, 400, fail('JSON_INVALID', 'Request body is not valid JSON', 'محتوى الطلب ليس JSON صالحًا'));
+      try {
+        return send(res, 200, { ok: true, result: edit[fn](dir, body) });
+      } catch (e) {
+        if (!(e instanceof PmoError)) return send(res, 500, { error: errorOut(e) });
+        return send(res, STATUS[e.code] || 400, { error: errorOut(e) });
+      }
+    });
+  };
+
   const server = http.createServer((req, res) => {
     // DNS-rebinding guard: only answer requests addressed to this machine.
     if (!allowedHosts().includes(String(req.headers.host || '').toLowerCase())) return send(res, 403, { error: { code: 'HOST_NOT_ALLOWED' } });
-    if (req.method !== 'GET' && req.method !== 'HEAD')
-      return send(res, 405, { error: { code: 'READ_ONLY', message_en: 'The dashboard is read-only', message_ar: 'لوحة المتابعة للقراءة فقط' } }, undefined, { Allow: 'GET, HEAD' });
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+      if (!editMode)
+        return send(res, 405, { error: { code: 'READ_ONLY', message_en: 'The dashboard is read-only', message_ar: 'لوحة المتابعة للقراءة فقط' } }, undefined, { Allow: 'GET, HEAD' });
+      const wp = String(req.url || '').split('?')[0];
+      if (req.method === 'POST' && WRITES[wp]) return write(req, res, WRITES[wp]);
+      return send(res, 405, fail('METHOD_NOT_ALLOWED', 'Use GET, or POST on the edit endpoints', 'استخدم GET، أو POST على مسارات التعديل'), undefined, { Allow: WRITES[wp] ? 'GET, HEAD, POST' : 'GET, HEAD' });
+    }
     let url;
     try {
       url = new URL(req.url, 'http://localhost');
@@ -305,7 +395,7 @@ function createServer(dir, { pollMs = 1000, root = ROOT, port = 0 } = {}) {
       return send(res, 200, { ar: { ...report.ar, ...dash.ar }, en: { ...report.en, ...dash.en } });
     }
     if (p === '/favicon.ico') return send(res, 204, '');
-    if (p === '/api/state') return send(res, 200, buildState(dir, { root }));
+    if (p === '/api/state') return send(res, 200, buildState(dir, { root, editMode }));
     if (p === '/api/files') return send(res, 200, walk(dir));
     if (p === '/api/file') {
       const rel = url.searchParams.get('path');
@@ -327,7 +417,7 @@ function createServer(dir, { pollMs = 1000, root = ROOT, port = 0 } = {}) {
           parseError = e.message;
         }
       }
-      return send(res, 200, { path: rel.split(path.sep).join('/'), size: f.size, controlled: PROTECTED.includes(rel), json, text: json ? null : text, parseError });
+      return send(res, 200, { path: posixRel(rel), size: f.size, controlled: PROTECTED.includes(posixRel(rel)), json, text: json ? null : text, parseError });
     }
     if (p === '/api/events') {
       res.writeHead(200, { 'Content-Type': 'text/event-stream; charset=utf-8', Connection: 'keep-alive', ...SECURITY_HEADERS });
@@ -345,6 +435,8 @@ function createServer(dir, { pollMs = 1000, root = ROOT, port = 0 } = {}) {
     timer.unref();
   });
   server.on('close', () => clearInterval(timer));
+  server.token = token;
+  server.editMode = editMode;
   const close = server.close.bind(server);
   server.close = (cb) => {
     for (const c of clients) c.end();
@@ -366,22 +458,48 @@ function parseArgs(argv) {
   return o;
 }
 
+// --dir may point at the .pmo folder or at the project folder that contains it; relative paths are
+// resolved against cwd with the platform's rules (p = path.win32 in tests: "examples\waterfall\.pmo").
+function resolveProjectDir(arg, { cwd = process.cwd(), p = path, exists = (f) => fs.existsSync(f) } = {}) {
+  const dir = p.resolve(cwd, typeof arg === 'string' && arg ? arg : '.pmo');
+  if (exists(p.join(dir, 'project.json'))) return { dir, found: true };
+  const nested = p.join(dir, '.pmo');
+  if (exists(p.join(nested, 'project.json'))) return { dir: nested, found: true };
+  return { dir, found: false };
+}
+
+const USAGE = 'Usage: npm run dashboard -- --dir <project>/.pmo [--port 4173] [--edit]\n       node engine/dashboard.js --dir <project>/.pmo [--port 4173] [--edit]\n';
+
 function main(argv) {
   const o = parseArgs(argv);
-  const dir = path.resolve(typeof o.dir === 'string' ? o.dir : typeof o.project === 'string' ? o.project : '.pmo');
-  const finalDir = fs.existsSync(path.join(dir, 'project.json')) ? dir : fs.existsSync(path.join(dir, '.pmo', 'project.json')) ? path.join(dir, '.pmo') : dir;
-  if (!fs.existsSync(path.join(finalDir, 'project.json'))) {
+  const { dir: finalDir, found } = resolveProjectDir(typeof o.dir === 'string' ? o.dir : typeof o.project === 'string' ? o.project : null);
+  if (!found) {
     const m = format('FILE_MISSING', { file: path.join(finalDir, 'project.json') });
-    process.stderr.write(m.ar + '\n' + m.en + '\nUsage: npm run dashboard -- --dir <project>/.pmo [--port 4173]\n');
+    process.stderr.write(m.ar + '\n' + m.en + '\n' + USAGE);
     process.exitCode = 1;
     return null;
   }
+  const editMode = o.edit === true || o.edit === 'true';
   const port = o.port === undefined ? 4173 : Number(o.port);
   const host = typeof o.host === 'string' ? o.host : '127.0.0.1';
-  const server = createServer(finalDir, { port });
-  server.listen(port, host, () => {
+  if (editMode && !['127.0.0.1', 'localhost'].includes(host)) {
+    process.stderr.write('Edit mode listens on 127.0.0.1 only · وضع التعديل يعمل على 127.0.0.1 فقط\n');
+    process.exitCode = 1;
+    return null;
+  }
+  const server = createServer(finalDir, { port, editMode });
+  server.listen(port, editMode ? '127.0.0.1' : host, () => {
     const p = server.address().port;
-    process.stdout.write(`PMO dashboard (read-only) · لوحة متابعة PMO (قراءة فقط)\n  http://localhost:${p}\n  project: ${finalDir}\n  Ctrl+C to stop · Ctrl+C للإيقاف\n`);
+    const lines = editMode
+      ? [
+          'PMO dashboard — EDIT MODE · لوحة متابعة PMO — وضع التعديل',
+          `  Open this link once (it carries the session token) · افتح هذا الرابط مرة واحدة (فيه رمز الجلسة):`,
+          `  http://localhost:${p}/#token=${server.token}`,
+          '  Controlled records become proposals; you approve them on the Approvals page.',
+          '  السجلات المحمية تصبح اقتراحات، وتوافق عليها من صفحة الموافقات.',
+        ]
+      : ['PMO dashboard (read-only) · لوحة متابعة PMO (قراءة فقط)', `  http://localhost:${p}`];
+    process.stdout.write(lines.join('\n') + `\n  project: ${finalDir}\n  Ctrl+C to stop · Ctrl+C للإيقاف\n`);
   });
   server.on('error', (e) => {
     process.stderr.write((e.code === 'EADDRINUSE' ? `Port ${port} is in use; try --port ${port + 1}` : e.message) + '\n');
@@ -392,4 +510,4 @@ function main(argv) {
 
 if (require.main === module) main(process.argv.slice(2));
 
-module.exports = { createServer, buildState, readAgents, safeFile, signature, walk, main };
+module.exports = { createServer, buildState, readAgents, safeFile, inside, posixRel, resolveProjectDir, signature, walk, main, MAX_BODY_BYTES };
