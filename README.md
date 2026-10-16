@@ -83,8 +83,6 @@ The newest progress snapshot sets the status date; its `activityProgress` drives
 
 A live dashboard of the project on your own machine — no internet, no CDN, no extra installs. Read-only by default; an opt-in edit mode is described below.
 
-> **Not merged yet:** the dashboard lives on the branch `claude/pmo-dashboard`. On `main`, `npm run dashboard` fails with `npm error Missing script: "dashboard"`. Until it is merged run `git fetch origin` then `git checkout claude/pmo-dashboard` first.
-
 ```bash
 npm run dashboard -- --dir examples/waterfall/.pmo      # try it on a sample
 node engine/dashboard.js --dir /path/to/project/.pmo --port 4173
@@ -137,8 +135,7 @@ The Terminal prints a link with a session token, e.g. `http://localhost:4173/#to
 Use backslashes or forward slashes, both work:
 
 ```bat
-git fetch origin
-git checkout claude/pmo-dashboard
+git pull
 npm run dashboard -- --dir examples\waterfall\.pmo
 npm run dashboard -- --dir examples\waterfall\.pmo --edit
 ```

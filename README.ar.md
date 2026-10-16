@@ -102,8 +102,6 @@ claude plugin install pmo@pmo
 
 لوحة متابعة مباشرة للمشروع على جهازك، بلا إنترنت ولا CDN ولا تثبيت إضافي. للقراءة فقط افتراضيًا، وفيها وضع تعديل اختياري موضّح أدناه.
 
-> **لم تُدمج بعد:** اللوحة موجودة في الفرع `claude/pmo-dashboard`. إذا شغّلت `npm run dashboard` من `main` ستظهر الرسالة `npm error Missing script: "dashboard"`. إلى أن تُدمج، شغّل أولًا `git fetch origin` ثم `git checkout claude/pmo-dashboard`.
-
 ```bash
 npm run dashboard -- --dir examples/waterfall/.pmo      # جرّبها على مثال
 node engine/dashboard.js --dir /path/to/project/.pmo --port 4173
@@ -156,8 +154,7 @@ npm run dashboard -- --dir examples/waterfall/.pmo --edit
 الشرطة المائلة بالاتجاهين تعمل:
 
 ```bat
-git fetch origin
-git checkout claude/pmo-dashboard
+git pull
 npm run dashboard -- --dir examples\waterfall\.pmo
 npm run dashboard -- --dir examples\waterfall\.pmo --edit
 ```

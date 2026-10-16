@@ -1,9 +1,11 @@
 # Changelog
 
-## Unreleased
+## 1.1.0 — 2026-10-16
+
+- Dashboard merged into `main` (was on the `claude/pmo-dashboard` branch); README and skill no longer ask for a branch checkout.
 
 - **Dashboard edit mode** (`--edit`, opt-in; default stays read-only): issues (add/edit), lessons (add) and backlog item status are saved through the engine (`engine/edit.js` → `execute` → `validate` → write); activity progress, risks (add/change), change requests and stakeholders become proposals via `approvals.propose`; the Approvals page gets Approve / Reject / Edit (engine `apply`, decisions logged in `decisions.json`; Edit re-proposes and rejects the original as “superseded by”). Every action is logged in the new engine-only `audit.json` (`by: "PM via dashboard"`). Forms in a drawer, Arabic/English, confirmation step, inline field errors, «وضع التعديل» badge. Safety: 127.0.0.1 only, loopback peers only, per-session token (`X-PMO-Token`), same-origin check, JSON-only, 64 KB body limit, field whitelist per form. Tests in `tests/dashboard-edit.test.js`.
-- Windows: `--dir examples\waterfall\.pmo` and drive-letter paths resolved with `path.resolve`; the inside-the-project check uses `path.relative` (tested with `path.win32`); backslash request paths normalised. README notes that the dashboard needs `git checkout claude/pmo-dashboard` until merged.
+- Windows: `--dir examples\waterfall\.pmo` and drive-letter paths resolved with `path.resolve`; the inside-the-project check uses `path.relative` (tested with `path.win32`); backslash request paths normalised.
 - `lessons.json` added to the engine collections; `audit.json` added to the controlled records.
 - **Live dashboard** (`npm run dashboard -- --dir <project>/.pmo`, `node engine/dashboard.js`, skill `/pmo:dashboard`): local read-only web page on http://localhost:4173 with zero dependencies. Pages: project health (RAG, SPI/CPI, EVM, EAC methods, forecast vs baseline, S-curve, index trend), schedule (Gantt baseline vs forecast, critical path), backlog & sprints (velocity, burnup, burndown, AgileEVM), risks (heat map + register), issues, changes, quality, stakeholders, approvals queue with before/after and decision log, lessons, the 11 agents (read from `agents/*.md`: skills, data files, autonomy, last activity), and a data explorer. Arabic/English with RTL, light/dark, keyboard navigation; refreshes when `.pmo/` changes (server-sent events). All figures come from the engine (`buildReportData`). Server answers GET only, binds 127.0.0.1, checks the Host header, and serves only files inside the project folder. Tests in `tests/dashboard.test.js`.
 

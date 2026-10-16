@@ -33,5 +33,5 @@ node "${CLAUDE_PLUGIN_ROOT}/engine/dashboard.js" --dir .pmo --port 4173 --edit
 
 ## Windows
 
-- Until the dashboard branch is merged: `git fetch origin` then `git checkout claude/pmo-dashboard` (on `main`, `npm run dashboard` gives `Missing script: "dashboard"`).
+- If `npm run dashboard` says `Missing script: "dashboard"`, your copy is older than 1.1.0: run `git pull` (or update the plugin) first.
 - `npm run dashboard -- --dir examples\waterfall\.pmo --edit` works in cmd; in PowerShell prefer `node engine\dashboard.js --dir examples\waterfall\.pmo --edit` (npm can drop arguments after `--`).
