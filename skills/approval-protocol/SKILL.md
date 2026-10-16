@@ -28,7 +28,7 @@ Errors come back as `{"error":{"code","message_ar","message_en","details"}}`. Re
 | 🟡 Needs approval | change a controlled record or act outside the project | risks, schedule, budget, baseline, project.json, change requests, charter, pushing to Jira, sending email/Teams/Slack |
 | 🔴 Never | — | delete records or files, invent numbers, send anything externally without an approved decision, run `apply` yourself |
 
-Controlled records (guarded by a hook — direct edits are refused): `project.json`, `charter.md`, `schedule.json`, `budget.json`, `risks.json`, `changes.json`, `scope/wbs.json`, `decisions.json`, `approvals.json`.
+Controlled records (guarded by a hook — direct edits are refused): `project.json`, `charter.md`, `schedule.json`, `budget.json`, `risks.json`, `changes.json`, `scope/wbs.json`, `decisions.json`, `approvals.json`, `audit.json` (log of dashboard edits, written by the engine only).
 
 Free records (you may write directly, then run `validate`): `issues.json`, `stakeholders.json`, `quality.json`, `lessons.json`, `scope/backlog.json`, `progress/<YYYY-MM-DD>.json`, `drafts/*`, `reports/*`.
 
@@ -56,7 +56,7 @@ Operations:
 | `baseline` | optional `date` | set the schedule baseline from the current plan |
 | `document` | `file` (`charter.md`), `source` (`drafts/…`) | publish an approved document |
 
-Collections: `risks.json → risks`, `changes.json → changes`, `schedule.json → activities`, `stakeholders.json → stakeholders`, `issues.json → issues`, `scope/backlog.json → items`, `scope/wbs.json → elements`.
+Collections: `lessons.json → lessons`, `risks.json → risks`, `changes.json → changes`, `schedule.json → activities`, `stakeholders.json → stakeholders`, `issues.json → issues`, `scope/backlog.json → items`, `scope/wbs.json → elements`.
 
 On Windows shells quoting JSON is fragile: write the proposal to `.pmo/drafts/proposal-<short-name>.json` and use `propose --file`.
 

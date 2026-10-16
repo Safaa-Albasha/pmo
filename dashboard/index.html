@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PMO dashboard</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<a class="skip" href="#main" id="skip-link">Skip to content</a>
+<header class="topbar">
+  <button type="button" class="icon-btn menu-btn" id="btn-menu" aria-expanded="false" aria-controls="sidebar"><span aria-hidden="true">☰</span><span class="sr" id="menu-label">Menu</span></button>
+  <div class="brand">
+    <span class="brand-mark" aria-hidden="true">PMO</span>
+    <div class="brand-text">
+      <div class="project-name" id="project-name">…</div>
+      <div class="project-meta" id="project-meta"></div>
+    </div>
+  </div>
+  <div class="top-actions">
+    <span class="badge" id="badge-ro"></span>
+    <span class="live" id="live" role="status" aria-live="polite"><i aria-hidden="true"></i><span id="live-text"></span></span>
+    <button type="button" id="btn-lang"></button>
+    <button type="button" id="btn-theme"></button>
+  </div>
+</header>
+<div class="edit-strip" id="edit-strip" role="status" hidden></div>
+<div class="layout">
+  <nav class="sidebar" id="sidebar" aria-label="Sections"></nav>
+  <main id="main" tabindex="-1"></main>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="app.js"></script>
+</body>
+</html>

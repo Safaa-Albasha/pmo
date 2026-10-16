@@ -41,6 +41,7 @@ Try it first on a sample: copy `examples/waterfall` (Arabic), `examples/agile` (
 | `/pmo:weekly` | Full weekly cycle with all agents and a one-screen briefing |
 | `/pmo:approvals` | Decide pending proposals; every decision is logged |
 | `/pmo:report` | Interactive HTML report and presentation |
+| `/pmo:dashboard` | Live local dashboard on localhost (read-only; `--edit` for opt-in edits through the approval flow) |
 | `/pmo:risks` | Risk register, heat map, new/updated risks |
 | `/pmo:change` | Change requests with impact analysis |
 | `/pmo:sprint` | Sprint planning, review and close (agile/hybrid) |
@@ -73,9 +74,83 @@ Agents submit a proposal (what changes, why, impact). You approve, reject or edi
 | `progress/<date>.json` | % complete, actual cost, points done, `activityProgress` | direct |
 | `issues.json` · `stakeholders.json` · `quality.json` · `lessons.json` | registers | direct |
 | `approvals.json` · `decisions.json` | approval queue and decision log | engine only |
+| `audit.json` | log of edits made from the dashboard | engine only |
 | `drafts/` · `reports/` | drafts and generated reports | direct |
 
 The newest progress snapshot sets the status date; its `activityProgress` drives the schedule forecast. All files are plain JSON/Markdown — keep `.pmo/` in Git for a full audit trail.
+
+## Dashboard
+
+A live dashboard of the project on your own machine — no internet, no CDN, no extra installs. Read-only by default; an opt-in edit mode is described below.
+
+> **Not merged yet:** the dashboard lives on the branch `claude/pmo-dashboard`. On `main`, `npm run dashboard` fails with `npm error Missing script: "dashboard"`. Until it is merged run `git fetch origin` then `git checkout claude/pmo-dashboard` first.
+
+```bash
+npm run dashboard -- --dir examples/waterfall/.pmo      # try it on a sample
+node engine/dashboard.js --dir /path/to/project/.pmo --port 4173
+```
+
+Open **http://localhost:4173**. In Claude Code: `/pmo:dashboard`.
+
+| Page | Shows |
+|---|---|
+| Project | RAG (overall, schedule, cost), % complete, SPI/CPI, PV/EV/AC, SV/CV, EAC (3 methods), ETC, VAC, TCPI, forecast finish vs baseline, budget and reserves, S-curve, CPI/SPI trend, top risks, decisions needed, next 30 days, progress snapshots |
+| Schedule | Gantt baseline vs forecast, status date and deadline lines, critical path, activity table with float |
+| Backlog & sprints | velocity, burnup, burndown, planned vs completed points, sprints, backlog items, AgileEVM (agile/hybrid) |
+| Risks · Issues · Changes · Quality · Stakeholders · Lessons | the registers, risk heat map (click a cell to filter), EMV vs contingency, quality metrics vs target, defects, power/interest grid |
+| Agents | the 11 agents read from `agents/*.md`: role, skills, data files (🔒 = controlled, via approval), what is automatic / needs your approval / never, last activity from `approvals.json` and `decisions.json` |
+| Approvals & decisions | pending proposals with before/after, decision log (decide in `/pmo:approvals`) |
+| Data explorer | every file in `.pmo/` with a JSON viewer |
+
+- Every number is computed by the engine (`buildReportData` → the same `status`, EVM, CPM, agile and risk functions as the CLI and the report).
+- Arabic/English toggle with right-to-left layout, light/dark theme, keyboard navigation.
+- Refreshes by itself when anything in `.pmo/` changes.
+- Read-only and local: listens on 127.0.0.1, answers only `GET`, serves only files inside the project folder.
+
+### Edit mode (opt-in)
+
+```bash
+npm run dashboard -- --dir examples/waterfall/.pmo --edit
+```
+
+The Terminal prints a link with a session token, e.g. `http://localhost:4173/#token=3f9a…`. Open that link once; the page keeps the token for the tab (sessionStorage) and shows a red **Edit mode** badge. Without the token the buttons stay disabled.
+
+| You do | Record | What happens |
+|---|---|---|
+| Add / edit an issue | `issues.json` (free) | saved now by the engine, then validated |
+| Add a lesson learned | `lessons.json` (free) | saved now |
+| Change a backlog item's status | `scope/backlog.json` (free) | saved now |
+| Update an activity's % complete | `schedule.json` (controlled) | **proposal** in `approvals.json` |
+| Propose a risk or a risk change | `risks.json` (controlled) | **proposal** |
+| New change request | `changes.json` (controlled) | **proposal** |
+| Propose a stakeholder | `stakeholders.json` | **proposal** (stricter than the protocol, on purpose) |
+| Approve / Reject / Edit on the Approvals page | any proposal | engine `apply` → record changed + `decisions.json`; Edit = new proposal + reject the original as “superseded by …” |
+
+- Every form shows whether it saves now or sends a proposal, and asks for confirmation before anything is sent. Proposals need a “why”.
+- Undo: a proposal can be rejected before it is applied (nothing changes). Free-record edits keep their before/after in `audit.json`.
+- Every action is logged in `audit.json` (engine-only, guarded) with `by: "PM via dashboard"` and the time; decisions also go to `decisions.json`. The page refreshes by itself after each change.
+- The page never writes files and never sends paths: it sends a form (`kind` + fields) and `engine/edit.js` decides the file, checks every field (unknown fields refused), runs the engine's `validate`, and writes or proposes.
+- Safety: binds 127.0.0.1 only (`--host` is refused in edit mode) and accepts writes only from the local machine; a random per-session token (header `X-PMO-Token`, never in `/api/state`); same-origin check on `Origin`/`Host`/`Sec-Fetch-Site`; JSON only (`Content-Type: application/json`); body limit 64 KB; errors come back as 400/401/403/404/409/413/415 with Arabic and English messages. Without `--edit` every write is `405`.
+
+### Windows
+
+Use backslashes or forward slashes, both work:
+
+```bat
+git fetch origin
+git checkout claude/pmo-dashboard
+npm run dashboard -- --dir examples\waterfall\.pmo
+npm run dashboard -- --dir examples\waterfall\.pmo --edit
+```
+
+In PowerShell, if npm swallows the arguments after `--`, call Node directly (works in every shell):
+
+```powershell
+node engine\dashboard.js --dir examples\waterfall\.pmo --edit
+node engine\dashboard.js --dir C:\Projects\warehouse\.pmo --port 4180
+```
+
+`--dir` may point at the `.pmo` folder or at the project folder that contains it. Paths are resolved with Node's `path.resolve`, so relative, absolute and drive-letter paths all work.
 
 ## Connectors
 
